@@ -1,0 +1,125 @@
+// =============================================================================
+// INPUT SCRIPT (DEFINITIVE BLUEPRINT v18.0 - GUIDEBOOK COMPLIANT)
+// =============================================================================
+
+const modifier = (text) => {
+    if (!state.engineInitialized) { return { text: "" }; }
+    if (info.actionCount === 0) { return { text: text.trim().length === 0 ? " " : text }; }
+
+    masterStartup();
+    delete state.encounterState.playerAction;
+    delete state.encounterState.presentedClue;
+    state.encounterState.actionTaken = false;
+   
+    const lowerText = text.toLowerCase().trim();
+    
+    const findVerb = (verbList) => {
+        for (let i = 0; i < verbList.length; i++) {
+            if (lowerText.includes(verbList[i])) {
+                return verbList[i];
+            }
+        }
+        return null;
+    };
+   
+    let verb;
+    const intentVerbs = state.GAME_DATA.INTENT_VERBS;
+
+    if ((verb = findVerb(intentVerbs.assess))) {
+        state.encounterState.actionTaken = true;
+        message('Your Thoughts:\nVigil Alert: ' + state.vigilAlertSystem.vigilAlert + '/12\nStreet Reputation: ' + state.globalScores.reputation + '\nCurrent Suspicion: ' + state.globalScores.suspicion);
+    }
+    else if ((verb = findVerb(intentVerbs.use)) && lowerText.includes('hypospray')) {
+        state.encounterState.actionTaken = true;
+        state.encounterState.playerAction = 'use_hypospray';
+    }
+    else if ((verb = findVerb(intentVerbs.leave)) && state.encounterState.inEncounterMode) {
+        state.encounterState.actionTaken = true;
+        exitEncounter();
+    }
+    else if ((verb = findVerb(intentVerbs.move)) && !state.encounterState.inEncounterMode) {
+        let foundLocationKey = null;
+        for (const key in state.GAME_DATA.LOCATION_MAP) {
+            if (lowerText.includes(key.toLowerCase())) {
+                foundLocationKey = key;
+                break;
+            }
+        }
+        if (foundLocationKey) {
+            state.encounterState.actionTaken = true;
+            enterEncounter(foundLocationKey);
+        }
+    }
+    else {
+        const actionVerb = findVerb(intentVerbs.show) || findVerb(intentVerbs.examine);
+        if (actionVerb) {
+            let foundClue = null;
+            for (const clue in state.playerDossier.clues) {
+                const keywords = clue.toLowerCase().split(" ").filter(k => k.length > 3);
+                let clueIsPresent = false;
+                for (const k of keywords) {
+                    if (lowerText.includes(k)) {
+                        clueIsPresent = true;
+                        break;
+                    }
+                }
+                
+                if (clueIsPresent && state.playerDossier.clues[clue].status !== 'Not Found') {
+                    foundClue = clue;
+                    break;
+                }
+            }
+            if (foundClue) {
+                state.encounterState.actionTaken = true;
+                state.encounterState.presentedClue = foundClue;
+                if (intentVerbs.show.includes(actionVerb)) {
+                    state.encounterState.playerAction = 'show_clue';
+                } else {
+                    state.encounterState.playerAction = 'examine_clue';
+                }
+            }
+        }
+    }
+
+    if (state.encounterState.inEncounterMode) {
+        if (!state.encounterState.actionTaken) {
+            processSocialGambit(text);
+        }
+    } else {
+        if (!state.encounterState.actionTaken) {
+            processSocialGambit(text);
+        }
+        
+        const rand = Math.random() * 100;
+        const gageChance = state.vigilAlertSystem.vigilAlert * 5;
+        if (state.randomEncounter.gageCooldown > 0) { state.randomEncounter.gageCooldown--; }
+
+        if (state.randomEncounter.gageCooldown === 0 && rand < gageChance) {
+            state.encounterState.actionTaken = true;
+            state.encounterState.playerAction = 'random_encounter_gage';
+        } else if (!state.randomEncounter.kaelenTriggered && state.nuanceEngine.turnCount > 15 && state.globalScores.reputation >= 0 && rand < 25) {
+            state.encounterState.actionTaken = true;
+            state.encounterState.playerAction = 'random_encounter_kaelen';
+            state.randomEncounter.kaelenTriggered = true;
+        }
+
+        let suspicion = state.globalScores.suspicion;
+        let vigilAlert = state.vigilAlertSystem.vigilAlert;
+        
+        suspicion = clampScore(suspicion + 1, 'suspicion');
+
+        if (suspicion >= state.GAME_DATA.SCORE_CONFIG.suspicion.max) {
+            state.globalScores.suspicion = 0;
+            state.vigilAlertSystem.vigilAlert = clampScore(vigilAlert + 1, 'vigilAlert');
+            message("You feel a new set of eyes on you. The Vigil is getting nervous.");
+        } else {
+            state.globalScores.suspicion = suspicion;
+        }
+    }
+   
+    updateCoreState();
+
+    return { text };
+};
+
+modifier(text);
