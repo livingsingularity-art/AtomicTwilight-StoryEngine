@@ -1,0 +1,70 @@
+// =============================================================================
+// OUTPUT SCRIPT (DEFINITIVE BLUEPRINT v18.0 - GUIDEBOOK COMPLIANT)
+// =============================================================================
+
+const modifier = (text) => {
+    if (!state.engineInitialized) { return { text }; }
+    if (info.actionCount === 0) { return { text: text.trim().length === 0 ? " " : text }; }
+
+    let modifiedText = text;
+
+    if (state.shared.messageQueue && state.shared.messageQueue.length > 0) {
+        const formattedMessages = state.shared.messageQueue.join('\n') + '\n\n';
+        modifiedText = formattedMessages + modifiedText;
+        state.shared.messageQueue = [];
+    }
+
+    if (state.playerEffects.combatDrugTurnsLeft > 0) {
+        state.playerEffects.combatDrugTurnsLeft--;
+        if (state.playerEffects.combatDrugTurnsLeft === 0) {
+            message("The fire in your veins turns to ash. The razor's edge clarity dulls, and the familiar aches of age return with a vengeance.");
+            state.nuanceEngine.shockEventFlag = true;
+        }
+    }
+   
+    const conflictWords = {
+        massacre: 6, war: 6, slaughter: 6, bombing: 5, explosion: 5, riot: 5, uprising: 5, gunfire: 4,
+        assassinate: 4, execution: 4, purge: 4, sirens: 4, lockdown: 4, quarantine: 4, murder: 3,
+        ambush: 3, onslaught: 3, carnage: 3, captured: 3, battle: 3, brutal: 2, violence: 2,
+        screams: 2, corpse: 2, casualties: 2, hostile: 2, danger: 2, exposed: 2, fight: 1,
+        brawl: 1, attack: 1, shoot: 1, kill: 1, stab: 1, wound: 1, blood: 1, body: 1, threat: 1,
+        confront: 1, weapon: 1, arrest: 1, cornered: 1, conspiracy: 1, trapped: 1, Vigil: 1, Sterling: 1
+    };
+    const calmingWords = {
+        truce: -4, treaty: -4, ceasefire: -4, surrender: -4, peace: -3, resolved: -3, escaped: -2,
+        unseen: -2, unnoticed: -2, clandestine: -2, covert: -2, silent: -2, agreement: -2,
+        settled: -2, deal: -2, secure: -2, safe: -2, sanctuary: -2, erased: -2, quiet: -1,
+        discreet: -1, subtle: -1, hidden: -1, shadow: -1, avoid: -1, bypass: -1, bribe: -1,
+        negotiate: -1, bargain: -1, persuade: -1, reason: -1, diplomacy: -1, investigate: -1,
+        evidence: -1, clue: -1, witness: -1, observe: -1, analyze: -1, alibi: -1
+    };
+   
+    const lowerText = text.toLowerCase();
+    let suspicionChange = 0;
+
+    for (const word in conflictWords) {
+        if (lowerText.includes(word)) {
+            suspicionChange += conflictWords[word];
+        }
+    }
+    for (const word in calmingWords) {
+        if (lowerText.includes(word)) {
+            suspicionChange += calmingWords[word];
+        }
+    }
+   
+    if (suspicionChange !== 0) {
+        state.globalScores.suspicion = clampScore(state.globalScores.suspicion + suspicionChange, 'suspicion');
+    }
+
+    if (suspicionChange >= 5) {
+        state.nuanceEngine.shockEventFlag = true;
+    }
+   
+    state.nuanceEngine.turnCount = (state.nuanceEngine.turnCount || 0) + 1;
+    updateCoreState();
+
+    return { text: modifiedText };
+};
+
+modifier(text);
