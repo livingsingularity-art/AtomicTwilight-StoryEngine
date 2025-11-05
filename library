@@ -1,5 +1,14 @@
 // =============================================================================
-// LIBRARY SCRIPT (DEFINITIVE BLUEPRINT v11.0 - PATH CORRECTION)
+// LIBRARY SCRIPT (DEFINITIVE BLUEPRINT v19.0 - ENHANCED ESCALATION SYSTEM)
+// =============================================================================
+// CHANGELOG v19.0:
+// - Added extractUserAuthorsNote() to preserve user's custom authors notes
+// - Added ESCALATION_CONFIG with 15+ configurable parameters with min/max limits
+// - Added getConfig() helper function for validated config access
+// - Added heat accumulator system for probabilistic vigilAlert increases
+// - Added cooldown system for vigilAlert de-escalation after peaks
+// - Updated assembleAuthorsNote() to preserve user notes using " --- " separator
+// - All magic numbers now centralized in ESCALATION_CONFIG
 // =============================================================================
 
 // --- GLOBALLY DECLARED CORE FUNCTIONS ---
@@ -10,10 +19,37 @@ function log(source, message) {
     } catch (e) {}
 }
 
+function extractUserAuthorsNote(fullNote) {
+    if (!fullNote) return '';
+    var separator = ' --- ';
+    var separatorIndex = fullNote.indexOf(separator);
+    if (separatorIndex !== -1) {
+        return fullNote.substring(separatorIndex + separator.length);
+    }
+    if (fullNote.includes('[Genre:')) {
+        return '';
+    }
+    return fullNote;
+}
+
 function clampScore(value, key) {
     var config = state.GAME_DATA.SCORE_CONFIG[key];
     var val = typeof value !== 'undefined' ? value : 0;
     if (!config) { return val; }
+    return Math.max(config.min, Math.min(config.max, val));
+}
+
+function getConfig(key) {
+    if (!state.GAME_DATA || !state.GAME_DATA.ESCALATION_CONFIG) {
+        log('CONFIG', 'Warning: ESCALATION_CONFIG not initialized, using default for ' + key);
+        return 0;
+    }
+    var config = state.GAME_DATA.ESCALATION_CONFIG[key];
+    if (!config) {
+        log('CONFIG', 'Warning: Config key "' + key + '" not found');
+        return 0;
+    }
+    var val = config.value;
     return Math.max(config.min, Math.min(config.max, val));
 }
 
@@ -126,7 +162,11 @@ function processSocialGambit(playerInput) {
 function assembleAuthorsNote(inputOverride) {
     ensureStateShape();
     if (!state.originalAuthorsNote) {
-        state.originalAuthorsNote = state.memory.authorsNote || '[Genre:{{genre}}] [Phase:{{phase}}] [Focus:{{focus}}] [Theme:{{theme}}] [Style:{{style}}] [Directive:{{directive}}]';
+        var currentUserNote = extractUserAuthorsNote(state.memory.authorsNote);
+        state.originalAuthorsNote = '[Genre:{{genre}}] [Phase:{{phase}}] [Focus:{{focus}}] [Theme:{{theme}}] [Style:{{style}}] [Directive:{{directive}}]';
+        if (currentUserNote) {
+            state.preservedUserNote = currentUserNote;
+        }
     }
     var override = inputOverride || null;
     var charKey = state.GAME_DATA.LOCATION_TO_CHARACTER_MAP[state.encounterState.activeLocation] || 'Gorka';
@@ -141,7 +181,8 @@ function assembleAuthorsNote(inputOverride) {
         fear: state.encounterState.inEncounterMode ? (state.encounterState.activeFear || 0) : (charData.fear || 0)
     };
     var locationData = state.GAME_DATA.LOCATION_MAP[gs.locKey] || { focus: 'Unknown-Location' };
-    var needsUpdate = !!state.nuanceEngine.shockEventFlag || ((state.nuanceEngine.turnCount || 0) - (state.nuanceEngine.lastGenreStyleUpdateTurn || 0) >= 10);
+    var recalcInterval = getConfig('genreRecalcInterval');
+    var needsUpdate = !!state.nuanceEngine.shockEventFlag || ((state.nuanceEngine.turnCount || 0) - (state.nuanceEngine.lastGenreStyleUpdateTurn || 0) >= recalcInterval);
     var genre, style;
     if (needsUpdate) {
         genre = (function(g) {
@@ -214,12 +255,71 @@ function assembleAuthorsNote(inputOverride) {
         .replace('{{style}}', finalStyle)
         .replace('{{directive}}', finalDirective)
         .replace('{{debug}}', debugVars);
-    state.memory.authorsNote = finalAN.trim();
+    var userNoteSection = state.preservedUserNote ? ' --- ' + state.preservedUserNote : '';
+    state.memory.authorsNote = (finalAN + userNoteSection).trim();
 }
 
 function updateCoreState(inputOverride) {
     if (!state.engineInitialized) return;
     assembleAuthorsNote(inputOverride);
+}
+
+function processHeatAccumulator(suspicionChange) {
+    ensureStateShape();
+    var heatRatio = getConfig('suspicionToHeatRatio');
+    var heatDecay = getConfig('heatDecayRate');
+    var heatChance = getConfig('heatToVigilChance');
+    var vigilInc = getConfig('vigilAlertIncrement');
+
+    if (suspicionChange > 0) {
+        state.vigilAlertSystem.heat += suspicionChange * heatRatio;
+    } else if (suspicionChange < 0) {
+        state.vigilAlertSystem.heat = Math.max(0, state.vigilAlertSystem.heat + (suspicionChange * heatRatio));
+    } else {
+        state.vigilAlertSystem.heat = Math.max(0, state.vigilAlertSystem.heat - heatDecay);
+    }
+
+    var currentHeat = state.vigilAlertSystem.heat;
+    var roll = Math.random() * 100;
+    var triggerChance = heatChance + (currentHeat * 2);
+
+    if (roll < triggerChance && currentHeat > 5) {
+        var oldAlert = state.vigilAlertSystem.vigilAlert;
+        state.vigilAlertSystem.vigilAlert = clampScore(oldAlert + vigilInc, 'vigilAlert');
+        state.vigilAlertSystem.heat = Math.max(0, currentHeat - 5);
+        if (state.vigilAlertSystem.vigilAlert > oldAlert) {
+            message('The Vigil tightens their grip on the city.');
+            log('HEAT', 'Heat triggered vigilAlert increase: ' + oldAlert + ' -> ' + state.vigilAlertSystem.vigilAlert);
+        }
+    }
+}
+
+function processCooldownSystem() {
+    ensureStateShape();
+    var peakThreshold = getConfig('vigilPeakThreshold');
+    var cooldownDur = getConfig('cooldownDuration');
+    var cooldownRed = getConfig('cooldownReduction');
+
+    var currentAlert = state.vigilAlertSystem.vigilAlert;
+
+    if (state.vigilAlertSystem.cooldownMode) {
+        state.vigilAlertSystem.cooldownTurnsLeft--;
+        log('COOLDOWN', 'Cooldown active. Turns left: ' + state.vigilAlertSystem.cooldownTurnsLeft);
+
+        if (state.vigilAlertSystem.cooldownTurnsLeft <= 0) {
+            var newAlert = Math.max(1, currentAlert - cooldownRed);
+            state.vigilAlertSystem.vigilAlert = clampScore(newAlert, 'vigilAlert');
+            state.vigilAlertSystem.cooldownMode = false;
+            state.vigilAlertSystem.heat = 0;
+            message('The Vigil patrols seem less frequent. The pressure eases... for now.');
+            log('COOLDOWN', 'Cooldown complete. vigilAlert reduced from ' + currentAlert + ' to ' + newAlert);
+        }
+    } else if (currentAlert >= peakThreshold && !state.encounterState.inEncounterMode) {
+        state.vigilAlertSystem.cooldownMode = true;
+        state.vigilAlertSystem.cooldownTurnsLeft = cooldownDur;
+        message('The city holds its breath. The storm cannot last forever.');
+        log('COOLDOWN', 'Cooldown mode activated at vigilAlert ' + currentAlert);
+    }
 }
 
 function handleDebugCommands(text) {
@@ -232,7 +332,8 @@ function handleDebugCommands(text) {
     var pd = state.playerDossier;
     var debugMessage = '-- DEBUG MODE --\n';
     debugMessage += 'Global Scores: Rep: ' + gs.reputation + ', Suspicion: ' + gs.suspicion + '\n';
-    debugMessage += 'Vigil Alert: ' + va.vigilAlert + '/12\n';
+    debugMessage += 'Vigil Alert: ' + va.vigilAlert + '/12 | Heat: ' + (va.heat || 0).toFixed(2) + '\n';
+    debugMessage += 'Cooldown: ' + (va.cooldownMode ? 'ACTIVE (' + va.cooldownTurnsLeft + ' turns left)' : 'Inactive') + '\n';
     debugMessage += 'Encounter: ' + es.inEncounterMode + ', Loc: ' + es.activeLocation + ', Trust: ' + es.activeTrust + ', Fear: ' + es.activeFear + '\n';
     var cluesFound = 'Clues: ';
     for (var clue in pd.clues) {
@@ -252,6 +353,9 @@ function ensureStateShape() {
     state.persistentData = state.persistentData || { locations: {}, characters: {} };
     state.globalScores = state.globalScores || {};
     state.vigilAlertSystem = state.vigilAlertSystem || {};
+    state.vigilAlertSystem.heat = state.vigilAlertSystem.heat !== undefined ? state.vigilAlertSystem.heat : 0;
+    state.vigilAlertSystem.cooldownMode = state.vigilAlertSystem.cooldownMode || false;
+    state.vigilAlertSystem.cooldownTurnsLeft = state.vigilAlertSystem.cooldownTurnsLeft || 0;
     state.encounterState = state.encounterState || {};
     state.playerEffects = state.playerEffects || {};
     state.playerDossier = state.playerDossier || { clues: {} };
@@ -282,6 +386,39 @@ function initializeEngine() {
         vigilAlert: { min: 1,   max: 12, default: 1 },
         trust:      { min: -15, max: 15, default: 0 },
         fear:       { min: 0,   max: 15, default: 0 }
+    },
+    ESCALATION_CONFIG: {
+        // Suspicion & Vigilance
+        suspicionPerTurn: { value: 1, min: 0, max: 5, description: 'Suspicion increase per turn in non-encounter mode' },
+        suspicionThreshold: { value: 30, min: 20, max: 50, description: 'Suspicion level that triggers vigilAlert increase' },
+        vigilAlertIncrement: { value: 1, min: 1, max: 3, description: 'Amount vigilAlert increases when threshold reached' },
+
+        // Heat Accumulator System
+        heatDecayRate: { value: 0.5, min: 0, max: 2, description: 'Heat lost per turn when no conflict occurs' },
+        heatToVigilChance: { value: 10, min: 5, max: 25, description: 'Base percentage chance heat triggers vigilAlert increase' },
+        suspicionToHeatRatio: { value: 0.5, min: 0.1, max: 2, description: 'Multiplier converting suspicion changes to heat' },
+
+        // Cooldown System
+        cooldownDuration: { value: 5, min: 3, max: 10, description: 'Turns of cooldown after vigilAlert peak' },
+        cooldownReduction: { value: 2, min: 1, max: 4, description: 'Amount vigilAlert decreases after cooldown' },
+        vigilPeakThreshold: { value: 10, min: 8, max: 12, description: 'vigilAlert level that triggers cooldown mode' },
+
+        // Random Encounters
+        randomEncounterTurnThreshold: { value: 15, min: 10, max: 30, description: 'Minimum turns before Kaelen encounter possible' },
+        randomEncounterChance: { value: 25, min: 10, max: 50, description: 'Percentage chance for Kaelen encounter' },
+        gageEncounterMultiplier: { value: 5, min: 3, max: 10, description: 'vigilAlert multiplied by this for Gage encounter chance' },
+        gageCooldownTurns: { value: 8, min: 5, max: 15, description: 'Turns before Gage can appear again' },
+
+        // Combat & Effects
+        combatDrugDuration: { value: 5, min: 3, max: 10, description: 'Turns hypospray combat enhancement lasts' },
+        shockEventThreshold: { value: 5, min: 3, max: 10, description: 'Suspicion change required to trigger shock event' },
+
+        // Narrative Dynamics
+        genreRecalcInterval: { value: 10, min: 5, max: 20, description: 'Turns between genre/style recalculations' },
+
+        // Sentiment Analysis Weights
+        conflictWordWeight: { value: 1.0, min: 0.5, max: 2.0, description: 'Multiplier for conflict word scoring' },
+        calmingWordWeight: { value: 1.0, min: 0.5, max: 2.0, description: 'Multiplier for calming word scoring' }
     },
     INTENT_VERBS: {
         use: ['use','inject','take','administer','apply','consume','drink','shoot up','activate'],
@@ -505,7 +642,12 @@ function initializeEngine() {
         reputation: GAME_DATA.SCORE_CONFIG.reputation.default,
         suspicion: GAME_DATA.SCORE_CONFIG.suspicion.default
     };
-    state.vigilAlertSystem = { vigilAlert: GAME_DATA.SCORE_CONFIG.vigilAlert.default };
+    state.vigilAlertSystem = {
+        vigilAlert: GAME_DATA.SCORE_CONFIG.vigilAlert.default,
+        heat: 0,
+        cooldownMode: false,
+        cooldownTurnsLeft: 0
+    };
     state.encounterState = {
         inEncounterMode: false, activeLocation: 'Ignition City Streets',
         activeTrust: 0, activeFear: 0

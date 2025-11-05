@@ -1,5 +1,5 @@
 // =============================================================================
-// OUTPUT SCRIPT (DEFINITIVE BLUEPRINT v18.0 - GUIDEBOOK COMPLIANT)
+// OUTPUT SCRIPT (DEFINITIVE BLUEPRINT v19.0 - ENHANCED ESCALATION SYSTEM)
 // =============================================================================
 
 const modifier = (text) => {
@@ -14,6 +14,7 @@ const modifier = (text) => {
         state.shared.messageQueue = [];
     }
 
+    const combatDuration = getConfig('combatDrugDuration');
     if (state.playerEffects.combatDrugTurnsLeft > 0) {
         state.playerEffects.combatDrugTurnsLeft--;
         if (state.playerEffects.combatDrugTurnsLeft === 0) {
@@ -42,22 +43,31 @@ const modifier = (text) => {
     const lowerText = text.toLowerCase();
     let suspicionChange = 0;
 
+    const conflictWeight = getConfig('conflictWordWeight');
+    const calmingWeight = getConfig('calmingWordWeight');
+
     for (const word in conflictWords) {
         if (lowerText.includes(word)) {
-            suspicionChange += conflictWords[word];
+            suspicionChange += conflictWords[word] * conflictWeight;
         }
     }
     for (const word in calmingWords) {
         if (lowerText.includes(word)) {
-            suspicionChange += calmingWords[word];
+            suspicionChange += calmingWords[word] * calmingWeight;
         }
     }
-   
+
+    suspicionChange = Math.round(suspicionChange);
+
     if (suspicionChange !== 0) {
         state.globalScores.suspicion = clampScore(state.globalScores.suspicion + suspicionChange, 'suspicion');
+        processHeatAccumulator(suspicionChange);
+    } else {
+        processHeatAccumulator(0);
     }
 
-    if (suspicionChange >= 5) {
+    const shockThreshold = getConfig('shockEventThreshold');
+    if (Math.abs(suspicionChange) >= shockThreshold) {
         state.nuanceEngine.shockEventFlag = true;
     }
    

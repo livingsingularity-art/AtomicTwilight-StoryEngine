@@ -1,5 +1,5 @@
 // =============================================================================
-// CONTEXT SCRIPT (DEFINITIVE BLUEPRINT v18.0 - GUIDEBOOK COMPLIANT)
+// CONTEXT SCRIPT (DEFINITIVE BLUEPRINT v19.0 - ENHANCED ESCALATION SYSTEM)
 // =============================================================================
 
 const modifier = (text) => {
@@ -15,9 +15,10 @@ const modifier = (text) => {
         if (state.playerEffects.hyposprayUsed) {
             message("You've already used the hypospray. It's empty.");
         } else {
+            const drugDuration = getConfig('combatDrugDuration');
             state.playerEffects.hyposprayUsed = true;
-            state.playerEffects.combatDrugTurnsLeft = 5;
-            message("A cold fire floods your veins. The aches of age vanish, replaced by a razor's edge clarity. You have 5 turns before it wears off.");
+            state.playerEffects.combatDrugTurnsLeft = drugDuration;
+            message("A cold fire floods your veins. The aches of age vanish, replaced by a razor's edge clarity. You have " + drugDuration + " turns before it wears off.");
             anOverride = { focus: "Pharmacological-Enhancement", directive: "Describe the world snapping into sharp focus as the combat drug hits the player's system." };
             state.nuanceEngine.shockEventFlag = true;
         }

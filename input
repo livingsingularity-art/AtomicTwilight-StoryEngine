@@ -1,5 +1,5 @@
 // =============================================================================
-// INPUT SCRIPT (DEFINITIVE BLUEPRINT v18.0 - GUIDEBOOK COMPLIANT)
+// INPUT SCRIPT (DEFINITIVE BLUEPRINT v19.0 - ENHANCED ESCALATION SYSTEM)
 // =============================================================================
 
 const modifier = (text) => {
@@ -91,13 +91,19 @@ const modifier = (text) => {
         }
         
         const rand = Math.random() * 100;
-        const gageChance = state.vigilAlertSystem.vigilAlert * 5;
+        const gageMultiplier = getConfig('gageEncounterMultiplier');
+        const gageChance = state.vigilAlertSystem.vigilAlert * gageMultiplier;
+        const gageCooldown = getConfig('gageCooldownTurns');
+        const kaelenThreshold = getConfig('randomEncounterTurnThreshold');
+        const kaelenChance = getConfig('randomEncounterChance');
+
         if (state.randomEncounter.gageCooldown > 0) { state.randomEncounter.gageCooldown--; }
 
         if (state.randomEncounter.gageCooldown === 0 && rand < gageChance) {
             state.encounterState.actionTaken = true;
             state.encounterState.playerAction = 'random_encounter_gage';
-        } else if (!state.randomEncounter.kaelenTriggered && state.nuanceEngine.turnCount > 15 && state.globalScores.reputation >= 0 && rand < 25) {
+            state.randomEncounter.gageCooldown = gageCooldown;
+        } else if (!state.randomEncounter.kaelenTriggered && state.nuanceEngine.turnCount > kaelenThreshold && state.globalScores.reputation >= 0 && rand < kaelenChance) {
             state.encounterState.actionTaken = true;
             state.encounterState.playerAction = 'random_encounter_kaelen';
             state.randomEncounter.kaelenTriggered = true;
@@ -105,16 +111,22 @@ const modifier = (text) => {
 
         let suspicion = state.globalScores.suspicion;
         let vigilAlert = state.vigilAlertSystem.vigilAlert;
-        
-        suspicion = clampScore(suspicion + 1, 'suspicion');
 
-        if (suspicion >= state.GAME_DATA.SCORE_CONFIG.suspicion.max) {
+        const suspicionPerTurn = getConfig('suspicionPerTurn');
+        const suspicionThreshold = getConfig('suspicionThreshold');
+        const vigilIncrement = getConfig('vigilAlertIncrement');
+
+        suspicion = clampScore(suspicion + suspicionPerTurn, 'suspicion');
+
+        if (suspicion >= suspicionThreshold) {
             state.globalScores.suspicion = 0;
-            state.vigilAlertSystem.vigilAlert = clampScore(vigilAlert + 1, 'vigilAlert');
+            state.vigilAlertSystem.vigilAlert = clampScore(vigilAlert + vigilIncrement, 'vigilAlert');
             message("You feel a new set of eyes on you. The Vigil is getting nervous.");
         } else {
             state.globalScores.suspicion = suspicion;
         }
+
+        processCooldownSystem();
     }
    
     updateCoreState();
