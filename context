@@ -1,0 +1,88 @@
+// =============================================================================
+// CONTEXT SCRIPT (DEFINITIVE BLUEPRINT v18.0 - GUIDEBOOK COMPLIANT)
+// =============================================================================
+
+const modifier = (text) => {
+    if (!state.engineInitialized) { return { text: "" }; }
+    
+    let anOverride = null;
+
+    const playerAction = state.encounterState.playerAction;
+    const presentedClue = state.encounterState.presentedClue;
+    const charName = state.GAME_DATA.LOCATION_TO_CHARACTER_MAP[state.encounterState.activeLocation];
+
+    if (playerAction === 'use_hypospray') {
+        if (state.playerEffects.hyposprayUsed) {
+            message("You've already used the hypospray. It's empty.");
+        } else {
+            state.playerEffects.hyposprayUsed = true;
+            state.playerEffects.combatDrugTurnsLeft = 5;
+            message("A cold fire floods your veins. The aches of age vanish, replaced by a razor's edge clarity. You have 5 turns before it wears off.");
+            anOverride = { focus: "Pharmacological-Enhancement", directive: "Describe the world snapping into sharp focus as the combat drug hits the player's system." };
+            state.nuanceEngine.shockEventFlag = true;
+        }
+    }
+    else if (playerAction === 'examine_clue' && presentedClue) {
+        message('You take a closer look at the ' + presentedClue + '.');
+        anOverride = { focus: "Forensic-Examination", directive: 'Describe the player closely examining the \'' + presentedClue + '\'. Its specific, observable appearance is: \'' + state.GAME_DATA.CLUE_DETAILS[presentedClue] + '\'' };
+        state.nuanceEngine.shockEventFlag = true;
+    }
+    else if (playerAction === 'show_clue' && presentedClue) {
+        message('You present the ' + presentedClue + '.');
+    }
+    else if (playerAction === 'random_encounter_gage') {
+        enterEncounter("Ignition City Streets (Vigil Patrol)");
+        const revealGage = state.GAME_DATA.SECRET_DATABASE["Ignition City Streets (Vigil Patrol)"][0].tiers[0];
+        anOverride = { focus: revealGage.focus, style: revealGage.style, directive: 'Gage Riley performs the action: "' + revealGage.action + '". Then he says: "' + revealGage.dialogue + '"' };
+    }
+    else if (playerAction === 'random_encounter_kaelen') {
+        enterEncounter("Ignition City Streets (Kaelen Encounter)");
+        const revealKaelen = state.GAME_DATA.SECRET_DATABASE["Ignition City Streets (Kaelen Encounter)"][0].tiers[0];
+        anOverride = { focus: revealKaelen.focus, style: revealKaelen.style, directive: 'Deputy Kaelen performs the action: "' + revealKaelen.action + '". Then he says: "' + revealKaelen.dialogue + '"' };
+    }
+
+    if (presentedClue) {
+        const targetLocation = state.encounterState.inEncounterMode ? state.encounterState.activeLocation : 'Ignition City Streets';
+        const targetCharacter = state.GAME_DATA.LOCATION_TO_CHARACTER_MAP[targetLocation];
+        const secrets = state.GAME_DATA.SECRET_DATABASE[targetLocation] || [];
+        let secret = null;
+        for (const s of secrets) {
+            if (s.clue === presentedClue) {
+                secret = s;
+                break;
+            }
+        }
+        
+        if (secret) {
+            const trust = state.encounterState.inEncounterMode ? state.encounterState.activeTrust : (state.persistentData[targetCharacter] ? state.persistentData[targetCharacter].trust : 0);
+            const fear = state.encounterState.inEncounterMode ? state.encounterState.activeFear : (state.persistentData[targetCharacter] ? state.persistentData[targetCharacter].fear : 0);
+            let chosenTier = null;
+            
+            for (let i = secret.tiers.length - 1; i >= 0; i--) {
+                const tier = secret.tiers[i];
+                const trustMet = (tier.trust !== undefined) && (tier.trust >= 0 ? trust >= tier.trust : trust <= tier.trust);
+                const fearMet = (tier.fear !== undefined) && (fear >= tier.fear);
+                if (trustMet || fearMet) {
+                    chosenTier = tier;
+                    break;
+                }
+            }
+
+            if (chosenTier) {
+                anOverride = { focus: chosenTier.focus, style: chosenTier.style, directive: 'In response to the \'' + presentedClue + '\', ' + targetCharacter + ' performs the action: "' + chosenTier.action + '". Then they say: "' + chosenTier.dialogue + '"' };
+            }
+        }
+    }
+    
+    if (anOverride) {
+        updateCoreState(anOverride);
+    }
+    
+    if (state.encounterState.actionTaken) {
+        return { text: "" };
+    }
+
+    return { text };
+};
+
+modifier(text);
