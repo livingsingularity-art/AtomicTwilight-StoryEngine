@@ -1,0 +1,554 @@
+// =============================================================================
+// LIBRARY SCRIPT (DEFINITIVE BLUEPRINT v11.0 - PATH CORRECTION)
+// =============================================================================
+
+// --- GLOBALLY DECLARED CORE FUNCTIONS ---
+
+function log(source, message) {
+    try {
+        console.log('[IGNITION-SYS / ' + source.toString().toUpperCase() + '] ' + message);
+    } catch (e) {}
+}
+
+function clampScore(value, key) {
+    var config = state.GAME_DATA.SCORE_CONFIG[key];
+    var val = typeof value !== 'undefined' ? value : 0;
+    if (!config) { return val; }
+    return Math.max(config.min, Math.min(config.max, val));
+}
+
+function message(text) {
+    ensureStateShape();
+    state.shared.messageQueue.push('> ' + text);
+}
+
+function enterEncounter(locationKey) {
+    ensureStateShape();
+    if (!state.GAME_DATA.LOCATION_MAP[locationKey]) {
+        message('SYSTEM: Location \'' + locationKey + '\' is not recognized.');
+        return;
+    }
+    state.encounterState.inEncounterMode = true;
+    state.encounterState.activeLocation = locationKey;
+    var locData = state.persistentData.locations[locationKey];
+    if (locData.visited) {
+        state.encounterState.activeTrust = locData.lockedTrust;
+        state.encounterState.activeFear = locData.lockedFear;
+    } else {
+        var characterKey = state.GAME_DATA.LOCATION_TO_CHARACTER_MAP[locationKey];
+        var disp = state.GAME_DATA.CHARACTER_DISPOSITIONS[characterKey] || { trust: 0, fear: 0 };
+        state.encounterState.activeTrust = disp.trust;
+        state.encounterState.activeFear = disp.fear;
+        locData.visited = true;
+    }
+    message('You arrive at ' + locationKey + '.');
+    state.nuanceEngine.shockEventFlag = true;
+}
+
+function exitEncounter() {
+    ensureStateShape();
+    var locKey = state.encounterState.activeLocation;
+    if (locKey && locKey.indexOf('Ignition City Streets') === -1) {
+        var locData = state.persistentData.locations[locKey];
+        if (locData) {
+            locData.lockedTrust = state.encounterState.activeTrust;
+            locData.lockedFear = state.encounterState.activeFear;
+            var repChange = Math.round(locData.lockedTrust / 4);
+            var suspChange = Math.round(locData.lockedFear * 1.5) + (locData.lockedTrust < 0 ? 3 : 0);
+            state.globalScores.reputation = clampScore(state.globalScores.reputation + repChange, 'reputation');
+            state.globalScores.suspicion = clampScore(state.globalScores.suspicion + suspChange, 'suspicion');
+        }
+    }
+    state.encounterState.inEncounterMode = false;
+    state.encounterState.activeLocation = 'Ignition City Streets';
+    message('You head back out into the dust-choked streets.');
+    state.nuanceEngine.shockEventFlag = true;
+}
+
+function processSocialGambit(playerInput) {
+    ensureStateShape();
+    var lowerTxt = (playerInput || '').toLowerCase();
+    var words = lowerTxt.split(/[\s,.;:!?]+/).filter(Boolean);
+    var gambitWords = state.GAME_DATA.SOCIAL_GAMBIT_WORDS;
+    var gambitScores = { persuade: 0, intimidate: 0, barter: 0, deceive: 0 };
+    for (var i = 0; i < words.length; i++) {
+        var word = words[i];
+        for (var gambit in gambitWords) {
+            if (gambitWords[gambit] && gambitWords[gambit][word]) {
+                gambitScores[gambit] += gambitWords[gambit][word];
+            }
+        }
+    }
+    var dominantGambit = 'observe';
+    var maxScore = 0;
+    for (var gambitKey in gambitScores) {
+        if (gambitScores[gambitKey] > maxScore) {
+            maxScore = gambitScores[gambitKey];
+            dominantGambit = gambitKey;
+        }
+    }
+    var proseBonus = Math.floor(words.length / 10);
+    var gambitStrength = maxScore + proseBonus;
+    state.nuanceEngine.lastGambitType = dominantGambit;
+    state.nuanceEngine.lastGambitStrength = gambitStrength;
+    var trustChange = 0;
+    var fearChange = 0;
+    if (dominantGambit === 'persuade') {
+        trustChange = Math.ceil(gambitStrength / 2);
+        fearChange = -1;
+    } else if (dominantGambit === 'intimidate') {
+        trustChange = -Math.ceil(gambitStrength / 1.5);
+        fearChange = Math.ceil(gambitStrength / 1.5);
+    } else if (dominantGambit === 'barter') {
+        trustChange = Math.ceil(gambitStrength / 3);
+    } else if (dominantGambit === 'deceive') {
+        if (Math.random() * 10 < (8 - Math.ceil(gambitStrength / 2))) {
+            trustChange = 1;
+        } else {
+            trustChange = -Math.ceil(gambitStrength / 2);
+            fearChange = Math.ceil(gambitStrength / 3);
+            message('They see right through your lie.');
+        }
+    }
+    if (state.encounterState.inEncounterMode) {
+        state.encounterState.activeTrust = clampScore(state.encounterState.activeTrust + trustChange, 'trust');
+        state.encounterState.activeFear = clampScore(state.encounterState.activeFear + fearChange, 'fear');
+    } else {
+        var charKey = state.GAME_DATA.LOCATION_TO_CHARACTER_MAP[state.encounterState.activeLocation] || 'Gorka';
+        var charData = state.persistentData[charKey];
+        if (charData) {
+            charData.trust = clampScore(charData.trust + trustChange, 'trust');
+            charData.fear = clampScore(charData.fear + fearChange, 'fear');
+        }
+    }
+}
+
+function assembleAuthorsNote(inputOverride) {
+    ensureStateShape();
+    if (!state.originalAuthorsNote) {
+        state.originalAuthorsNote = state.memory.authorsNote || '[Genre:{{genre}}] [Phase:{{phase}}] [Focus:{{focus}}] [Theme:{{theme}}] [Style:{{style}}] [Directive:{{directive}}]';
+    }
+    var override = inputOverride || null;
+    var charKey = state.GAME_DATA.LOCATION_TO_CHARACTER_MAP[state.encounterState.activeLocation] || 'Gorka';
+    var charData = state.persistentData[charKey] || { trust: 0, fear: 0 };
+    var gs = {
+        alert: state.vigilAlertSystem.vigilAlert || 1,
+        rep: state.globalScores.reputation || -20,
+        susp: state.globalScores.suspicion || 0,
+        locKey: state.encounterState.activeLocation || 'Ignition City Streets',
+        isEncounter: !!state.encounterState.inEncounterMode,
+        trust: state.encounterState.inEncounterMode ? (state.encounterState.activeTrust || 0) : (charData.trust || 0),
+        fear: state.encounterState.inEncounterMode ? (state.encounterState.activeFear || 0) : (charData.fear || 0)
+    };
+    var locationData = state.GAME_DATA.LOCATION_MAP[gs.locKey] || { focus: 'Unknown-Location' };
+    var needsUpdate = !!state.nuanceEngine.shockEventFlag || ((state.nuanceEngine.turnCount || 0) - (state.nuanceEngine.lastGenreStyleUpdateTurn || 0) >= 10);
+    var genre, style;
+    if (needsUpdate) {
+        genre = (function(g) {
+            if (g.alert >= 12) return 'Survival-Thriller';
+            if (g.susp > 20) return 'Paranoid-Espionage';
+            if ((g.locKey === 'The Silent Room' || g.locKey === 'Lugal\'s Scrap Heap') && g.fear > 10) return 'Psychological-Horror';
+            if (g.rep >= 20) return 'Heroic-Last-Stand';
+            return 'Gritty-Sci-Fi-Noir';
+        })(gs);
+        var tempFocus = locationData.focus;
+        var tempTheme = (function(g) {
+            if (g.trust > 5 && g.fear < 7) return 'Candid-Confession';
+            if (g.trust > 5 && g.fear >= 7) return 'Volatile-Alliance';
+            if (g.trust <= 5 && g.fear >= 7) return 'Cornered-Animal';
+            return 'Apathetic-Indifference';
+        })(gs);
+        style = (function(f, t) {
+            if (t === 'Candid-Confession') return 'Wistful-' + f;
+            if (t === 'Volatile-Alliance') return 'Feverish-' + f;
+            if (t === 'Cornered-Animal') return 'Claustrophobic-' + f;
+            return 'Stagnant-' + f;
+        })(tempFocus, tempTheme);
+        state.nuanceEngine.cachedGenre = genre;
+        state.nuanceEngine.cachedStyle = style;
+        state.nuanceEngine.lastGenreStyleUpdateTurn = state.nuanceEngine.turnCount || 0;
+        state.nuanceEngine.shockEventFlag = false;
+    } else {
+        genre = state.nuanceEngine.cachedGenre || 'Gritty-Sci-Fi-Noir';
+        style = state.nuanceEngine.cachedStyle || 'Stagnant-Rustpunk-Graveyard';
+    }
+    var phase = (function(g) {
+        if (g.alert > 10) return 'Endgame(City-in-Chaos)';
+        if (g.alert > 7) return 'Hunted(Vigil-Eyes)';
+        if (g.alert > 4) return 'High-Stakes(Persons-of-Interest)';
+        if (g.susp > 15) return 'Tense(Street-Heat)';
+        return 'Quiet-Unease(Cold-Case)';
+    })(gs);
+    var focus = locationData.focus;
+    var theme = (function(g) {
+        if (g.trust > 5 && g.fear < 7) return 'Candid-Confession';
+        if (g.trust > 5 && g.fear >= 7) return 'Volatile-Alliance';
+        if (g.trust <= 5 && g.fear >= 7) return 'Cornered-Animal';
+        return 'Apathetic-Indifference';
+    })(gs);
+    if ((state.nuanceEngine.lastGambitType || 'observe') !== 'observe') {
+        var gname = state.nuanceEngine.lastGambitType;
+        var GambitName = gname.charAt(0).toUpperCase() + gname.slice(1);
+        theme = theme + '(Reacting-to-' + GambitName + ')';
+    }
+    var directive = (function(t, s) {
+        var themeBase = t.split('(')[0];
+        var styleBase = s.split('-')[0];
+        switch (themeBase) {
+            case 'Candid-Confession': return 'The NPC speaks with ' + styleBase + ' honesty. Their guard is down; reveal the truth plainly.';
+            case 'Volatile-Alliance': return 'The NPC is torn between trust and terror. Frame their cooperation as a desperate gamble.';
+            case 'Cornered-Animal': return 'The NPC is hostile and terrified. They may lie or lash out. Emphasize their non-verbal signs of fear.';
+            case 'Apathetic-Indifference': return 'The NPC is a wall of cynicism. They reveal nothing of substance. Focus on the oppressive atmosphere.';
+            default: return 'Portray the scene with gritty realism.';
+        }
+    })(theme, style);
+    var finalFocus = (override && override.focus) ? override.focus : focus;
+    var finalStyle = (override && override.style) ? override.style : style;
+    var finalDirective = (override && override.directive) ? override.directive : directive;
+    var debugVars = 'VARS:VA:' + gs.alert + '|R:' + gs.rep + '|S:' + gs.susp + '|T:' + gs.trust + '|F:' + gs.fear;
+    var finalAN = state.originalAuthorsNote;
+    finalAN = finalAN.replace('{{genre}}', genre)
+        .replace('{{phase}}', phase)
+        .replace('{{focus}}', finalFocus)
+        .replace('{{theme}}', theme)
+        .replace('{{style}}', finalStyle)
+        .replace('{{directive}}', finalDirective)
+        .replace('{{debug}}', debugVars);
+    state.memory.authorsNote = finalAN.trim();
+}
+
+function updateCoreState(inputOverride) {
+    if (!state.engineInitialized) return;
+    assembleAuthorsNote(inputOverride);
+}
+
+function handleDebugCommands(text) {
+    if (text.trim().toLowerCase() !== '/debug') {
+        return false;
+    }
+    var gs = state.globalScores;
+    var va = state.vigilAlertSystem;
+    var es = state.encounterState;
+    var pd = state.playerDossier;
+    var debugMessage = '-- DEBUG MODE --\n';
+    debugMessage += 'Global Scores: Rep: ' + gs.reputation + ', Suspicion: ' + gs.suspicion + '\n';
+    debugMessage += 'Vigil Alert: ' + va.vigilAlert + '/12\n';
+    debugMessage += 'Encounter: ' + es.inEncounterMode + ', Loc: ' + es.activeLocation + ', Trust: ' + es.activeTrust + ', Fear: ' + es.activeFear + '\n';
+    var cluesFound = 'Clues: ';
+    for (var clue in pd.clues) {
+        if (pd.clues[clue].status !== 'Not Found') {
+            cluesFound += clue + ' (' + pd.clues[clue].status + '), ';
+        }
+    }
+    debugMessage += cluesFound.slice(0, -2) + '\n';
+    debugMessage += 'Current AN: ' + state.memory.authorsNote;
+    message(debugMessage);
+    return true;
+}
+
+function ensureStateShape() {
+    state.shared = state.shared || {};
+    state.memory = state.memory || {};
+    state.persistentData = state.persistentData || { locations: {}, characters: {} };
+    state.globalScores = state.globalScores || {};
+    state.vigilAlertSystem = state.vigilAlertSystem || {};
+    state.encounterState = state.encounterState || {};
+    state.playerEffects = state.playerEffects || {};
+    state.playerDossier = state.playerDossier || { clues: {} };
+    state.nuanceEngine = state.nuanceEngine || {};
+    state.randomEncounter = state.randomEncounter || {};
+    state.shared.messageQueue = state.shared.messageQueue || [];
+}
+
+function masterStartup() {
+    if (state.masterInitialized) return;
+    ensureStateShape();
+    if (!state.engineInitialized) {
+        initializeEngine();
+    }
+    state.encounterState.activeLocation = 'Ignition City Streets';
+    state.encounterState.inEncounterMode = false;
+    log('MASTER', 'Startup complete.');
+    state.masterInitialized = true;
+}
+
+function initializeEngine() {
+    log('SYSTEM', 'Running One-Time Engine Initialization...');
+    
+    var GAME_DATA = {
+    SCORE_CONFIG: {
+        reputation: { min: -20, max: 20, default: -20 },
+        suspicion:  { min: 0,   max: 30, default: 0 },
+        vigilAlert: { min: 1,   max: 12, default: 1 },
+        trust:      { min: -15, max: 15, default: 0 },
+        fear:       { min: 0,   max: 15, default: 0 }
+    },
+    INTENT_VERBS: {
+        use: ['use','inject','take','administer','apply','consume','drink','shoot up','activate'],
+        examine: ['examine','look at','inspect','check','study','investigate','analyze','read','look over','get a closer look at','review'],
+        show: ['show','present','give','hand','offer','reveal','confront with','ask about','show him','show her','ask him about','ask her about'],
+        assess: ['assess','check status','check my head','take stock','review the situation','consider my options','what do i know','check dossier'],
+        move: ['go to','enter','head to','walk to','travel to','visit','approach','make my way to','set out for','find the','proceed to','move to'],
+        leave: ['leave','exit','depart','head out','walk away','go back','return to the streets',"i'm done here",'get out of here','head back']
+    },
+    SOCIAL_GAMBIT_WORDS: {
+        persuade: { reason:1, convince:2, explain:1, understand:2, help:2, logic:2, evidence:3, proof:3, appeal:1, show:2, reveal:3, demonstrate:2, argue:1, testimony:2, truth:4, cooperate:3, assist:2, together:2, honest:3, agree:1, facts:2, plea:2, beg:1, ask:1, please:1, consider:1, trust:4, believe:3, need:2, listen:1, see:1, point:1 },
+        intimidate: { threaten:2, force:3, shoot:4, hurt:3, demand:1, accuse:2, confront:2, warn:1, consequences:3, interrogate:2, intimidate:1, kill:5, murder:5, end:3, suffer:3, or:1, else:1, now:2, tell:1, me:1, talk:1, answer:2, push:2, break:3, regret:2, scream:3, bleed:4, pain:3, watch:1, your:1, back:1, dare:2, try:1 },
+        barter: { bribe:3, pay:2, credits:3, deal:2, offer:1, reward:2, hire:1, negotiate:2, trade:1, barter:1, transaction:1, compensation:2, price:2, worth:2, cost:1, buy:2, sell:1, for:1, exchange:2, what:1, it:1, in:1, my:1, information:2 },
+        deceive: { lie:3, trick:2, bluff:2, mislead:2, falsify:3, pretend:1, fabricate:2, invent:1, deceive:2, disguise:2, impersonate:3, secret:2, hide:1, untrue:3, false:3, fake:2, story:1, cover:2, alibi:3, misdirect:2 }
+    },
+    CLUE_DETAILS: {
+        "Photograph of Jones and Brick": "An old photograph of a younger Jones and Brick. The back reads: 'Brick - Remember the promise we made. Watch out for the Kid.'",
+        "Broken Power Cell": "A heavy, military-grade power cell, its casing cracked and scorched. A faint etching of a mole's claw inside a cog is visible.",
+        "Zetan Data Crystal": "A chipped Zetan data crystal wrapped in flimsiplast. A hand-drawn diagram on the wrapper shows it interfacing with a Terran power system, with the name 'Lugal' scribbled beside it.",
+        "Water Ration Chit": "A standard water ration chit from the Discovery Condenser Station. The back shows a massive debit for 'HYPER-COOLANT' rerouted to a disused reclamation valve.",
+        "Sabacc Chip": "A heavy, black sabacc chip from 'The Cold Hand,' embossed with a skeletal, three-fingered hand.",
+        "Ascendant Locket": "An elegant, opalescent Ascendant locket. Inside is not a picture, but a microscopic data-chip.",
+        "Military Hypospray": "A military-style hypospray containing a viscous, dark-green liquid.",
+        "Encrypted Ledger": "A featureless data-slate of matte black material. It's completely inert, with no obvious seams, ports, or way to activate it.",
+        "Metal Fragment": "A small, triangular piece of polished metal. Its edges are sharp, as if snapped from a larger object. Its shape suggests it could be the tip of a star-shaped award or insignia.",
+        "Wound Analysis Report": "Ur-Ea's private forensic analysis datapad. The text describes a deep, cauterized perforating wound with a perfect, star-shaped pattern of superheated energy, inconsistent with a blaster.",
+        "Hangar Location": "A combined analysis of Pavel's and Hemi's information. It pinpoints the location of a secret hangar: inside a half-buried, cylindrical alien vessel everyone mistakes for a natural mesa.",
+        "Power Cell": "A pristine, military-grade power cell, scavenged from the Kakarin Hangar. It hums with a faint, latent energy. This is the stable power source the Syllogism requires.",
+        "Decrypted Ledger": "The formerly inert dataslate now glows with a soft light. The screen displays the Directorate's financial records for 'Operation Phoenix Fire,' detailing a black budget payment to Lance Sterling to incite a violent uprising, creating a pretext for the complete 'sterilization' of Ignition City.",
+        "Seti's Credit Chit": "A heavy, untraceable credit chit of significant value. A silent acknowledgment from one old predator to another."
+    },
+    CHARACTER_DISPOSITIONS: {
+        "Gorka":{trust:0,fear:2}, "Brick Samson":{trust:5,fear:8}, "Roshan":{trust:2,fear:0}, "Pavel":{trust:-5,fear:12}, "Marshal Brody":{trust:-4,fear:3}, "Ur-Ea":{trust:0,fear:0}, "Seti":{trust:0,fear:0}, "Itzel":{trust:1,fear:1}, "Lugal":{trust:-2,fear:10}, "Lance Sterling":{trust:-10,fear:2}, "Gage \"Rocket\" Riley":{trust:-12,fear:0}, "Hemi":{trust:-2,fear:11}, "Administrator Thorne":{trust:-2,fear:6}, "Deputy Kaelen":{trust:4,fear:0}, "Orkhan":{trust:0,fear:0}, "Cody \"Kid Comet\" Burns":{trust:2,fear:6}, "Servitor-4C":{trust:0,fear:0}, "The Syllogism":{trust:0,fear:0}, "Mute Automaton":{trust:0,fear:0}
+    },
+    LOCATION_TO_CHARACTER_MAP: {
+        "Ignition City Streets": "Gorka", "The Star Bar": "Brick Samson", "The Siren's Call": "Roshan", "The Undercrawl": "Pavel", "Marshal's Service Headquarters": "Marshal Brody", "The Nightingale Clinic & Morgue": "Ur-Ea", "The Pioneer's Vigil Hall": "Lance Sterling", "Lugal's Scrap Heap": "Lugal", "The Cold Hand": "Seti", "The Verdant Shelf": "Itzel", "The Discovery Condenser Station": "Hemi", "The Pioneer's Resettlement Bureau": "Administrator Thorne", "The Beagle Landing Field": "Cody \"Kid Comet\" Burns", "The Silent Room": "The Syllogism", "Eagle's Rest": "Mute Automaton", "Ignition City Streets (Vigil Patrol)": "Gage \"Rocket\" Riley", "Ignition City Streets (Kaelen Encounter)": "Deputy Kaelen"
+    },
+    LOCATION_MAP: {
+        "The Star Bar": { focus: "Cannibalized-Nostalgia" }, "The Siren's Call": { focus: "Organic-Decadence" }, "The Undercrawl": { focus: "Compressive-Sanctuary" }, "Marshal's Service Headquarters": { focus: "Imposing-Brutalism" }, "The Nightingale Clinic & Morgue": { focus: "Clinical-Minimalism" }, "The Pioneer's Vigil Hall": { focus: "Cannibalized-Nostalgia" }, "Lugal's Scrap Heap": { focus: "Fortress-of-Thought" }, "The Cold Hand": { focus: "Predator's-Lair" }, "The Verdant Shelf": { focus: "The-Cultivated-Hospice" }, "The Silent Room": { focus: "The-Hermetic-Machine" }, "Ignition City Streets": { focus: "Rustpunk-Graveyard" }, "The Discovery Condenser Station": { focus: "Industrial-Skeleton" }, "The Pioneer's Resettlement Bureau": { focus: "Performative-Bureaucracy" }, "The Beagle Landing Field": { focus: "Graveyard-of-Ambition" }, "Eagle's Rest": { focus: "Vertical-Slum" }, "Ignition City Streets (Vigil Patrol)": { focus: "Hunting-Ground" }, "Ignition City Streets (Kaelen Encounter)": { focus: "Moment-of-Honor" }
+    },
+    CLUE_TO_LOCATION_MAP: {
+        "Photograph of Jones and Brick": "The Star Bar", "Broken Power Cell": "The Undercrawl", "Zetan Data Crystal": "Lugal's Scrap Heap", "Water Ration Chit": "The Discovery Condenser Station", "Sabacc Chip": "The Cold Hand", "Ascendant Locket": "The Siren's Call", "Military Hypospray": "The Verdant Shelf", "Encrypted Ledger": "The Silent Room", "Wound Analysis Report": "Marshal's Service Headquarters"
+    },
+    SECRET_DATABASE: {
+        "The Nightingale Clinic & Morgue": [
+            { clue: null, tiers: [
+                { trust: 0, fear: 0, type: 'INTRO', focus: 'Clinical-Obstruction', style: 'Sterile-Dismissal', action: "Ur-Ea looks up from his instruments, his large, black eyes unreadable. He gestures towards the slab where Jones's body lies under a sheet.", dialogue: "This is an active Marshal's Service investigation. Access is restricted." },
+                { trust: 8, fear: 0, type: 'REVEAL_TRUST', focus: 'Logical-Disclosure', style: 'Precise-Explanation', action: "Ur-Ea gives a slow nod. He accesses a private, encrypted file on his terminal. 'The official report is flawed data.' On a monitor, he displays the wound analysis and an image of the metal fragment. 'He was not shot. He was impaled.'", dialogue: "I will transfer the files to your datapad. What you do with this data is not my concern." },
+                { trust: 0, fear: 9, type: 'REVEAL_FEAR', focus: 'Pressured-Compliance', style: 'Nervous-Indication', action: "Ur-Ea's usual composure is gone. He avoids looking at you, gesturing impatiently toward the body.", dialogue: "The data is observable. Form your own conclusion. Now leave before you compromise this facility." }
+            ] },
+            { clue: null, tiers: [
+                { trust: 0, fear: 0, type: 'PASSIVE_DISCOVERY', focus: 'Forensic-Observation', style: 'Cold-Stillness', action: "You examine the body of Rocket Ranger Jones on the slab. A perfect, star-shaped hole is burned through his chest, the edges cauterized bright orange. His right hand is clutched in a tight fist.", dialogue: "You gently pry open Jones's stiff fingers. Tucked into his palm, you find a small, triangular piece of polished metal. The official cause of death was a blaster bolt. This is not the mark of a blaster." }
+            ] }
+        ],
+        "Marshal's Service Headquarters": [
+            { clue: null, tiers: [
+                { trust: 0, fear: 0, type: 'INTRO', focus: 'Belligerent-Authority', style: 'Weary-Hostility', action: "Marshal Brody looks up from a map, his face a knot of permanent disapproval. He jerks a thumb towards the door.", dialogue: "I'm busy. Whatever it is, I don't care. Get out." }
+            ] },
+            { clue: "Wound Analysis Report", tiers: [
+                { trust: 12, fear: 0, type: 'REVEAL_TRUST', focus: 'Bitter-Confession', style: 'Explosive-Resignation', action: "Brody stares at you for a long moment. He slams his fist on the metal desk. 'Alright! You want the truth?' He leans into the harsh lighting, his voice a low, furious growl.", dialogue: "Sterling. It was Sterling. With that damn Sun-Sword of his. I know it. But if I arrest him, this whole damn city burns. Now you know. Get out." },
+                { trust: 0, fear: 7, type: 'SECONDARY_REACTION_FEAR', focus: 'Angry-Dismissal', style: 'Aggressive-Bureaucracy', action: "Brody's face flushes with anger. 'Get out of my office! Now!' As he turns his back on you, Deputy Kaelen, standing silently in the corner, subtly catches your eye. He gives a slow, deliberate nod towards the city map, tapping a finger on the sterile white icon of the Nightingale Clinic before turning away.", dialogue: "" }
+            ] }
+        ],
+        "Eagle's Rest": [
+            { clue: null, tiers: [
+                { trust: 0, fear: 0, type: 'INTRO', focus: 'Mechanical-Indifference', style: 'Silent-Obedience', action: "You approach the mute automaton at the front desk of the hab-unit tower. It tilts its head, its optical sensor glowing softly.", dialogue: "" },
+                { trust: 5, fear: 0, type: 'LEAD', focus: 'Simple-Direction', style: 'Robotic-Pointing', action: "The automaton processes your query about Jones. It raises a single, metallic finger and points silently up the corroded catwalks towards a stained, white hexagonal pod marked with the number 7.", dialogue: "" }
+            ] },
+            { clue: null, tiers: [
+                { trust: 0, fear: 0, type: 'PASSIVE_DISCOVERY', focus: 'Crime-Scene-Analysis', style: 'Haunting-Silence', action: "You enter Pod 7. The air is stale, tasting of ozone. On the bulkhead behind where the body would have fallen, you see it: a perfect, star-shaped incision melted a half-inch deep into the steel, its edges cleanly cauterized.", dialogue: "This confirms Ur-Ea's report. This was the work of a high-energy blade, not a blaster." }
+            ] }
+        ],
+        "The Star Bar": [
+            { clue: null, tiers: [
+                { trust: 0, fear: 0, type: 'INTRO', focus: 'Forced-Joviality', style: 'Alcoholic-Nostalgia', action: "Brick Samson stands behind the bar, polishing an already-clean glass. He forces a booming laugh as you approach.", dialogue: "Well, look what the dust dragged in! Name your poison. The first one's on the house." }
+            ] },
+            { clue: "Photograph of Jones and Brick", tiers: [
+                { trust: 7, fear: 0, type: 'REVEAL_TRUST', focus: 'Guilty-Confession', style: 'Whispered-Fear', action: "Brick's jovial mask cracks. He leans over the bar, his voice a harsh, booze-soaked whisper. His hands are shaking. At the far end of the bar, Cody sees the intense conversation, his face pales, and he quickly slips out.", dialogue: "He asked for my help... the night he died. I told him to leave it alone. I was a coward. I sent him away, and now he's dead because of me. Whatever you need... I owe him." },
+                { trust: 0, fear: 12, type: 'SECONDARY_REACTION_FEAR', focus: 'Fearful-Silence', style: 'Panicked-Stupor', action: "Brick freezes, his face ashen, unable to speak. His knuckles are white around the glass he's holding. At the end of the bar, Cody, seeing the confrontation, bolts from his stool and flees. Servitor-4C's amber optic turns to you.", dialogue: "The primary operator is experiencing a critical emotional state error. Alternate query is available." }
+            ] },
+            { clue: "Photograph of Jones and Brick", tiers: [
+                { trust: 0, fear: 0, type: 'REVEAL_SECONDARY', focus: 'Mechanical-Testimony', style: 'Unemotional-Playback', action: "Servitor-4C's amber optic fixes on you. Its vocalizer grille crackles. 'Query: Replay audio file timestamped 783.4?' It plays a perfect, static-free recording.", dialogue: "...it's a fraud. The Directorate is paying him to start a riot..." }
+            ] }
+        ],
+        "The Beagle Landing Field": [
+            { clue: null, tiers: [
+                { trust: 0, fear: 0, type: 'INTRO', focus: 'Wistful-Regret', style: 'Melancholy-Observation', action: "You find Cody hunched on a cargo crate, watching a transport ascend into the red sky. He doesn't look at you, his shoulders slumped in defeat.", dialogue: "Another one... gone. They all get to leave. We're just stuck here, waiting to rust." },
+                { trust: 8, fear: 0, type: 'REVEAL_TRUST', focus: 'Guilty-Confession', style: 'Whispered-Sorrow', action: "Cody finally turns to you, his eyes red and puffy. His confession is a broken, quiet whisper, thick with guilt.", dialogue: "He was right. I was a fool. I just wanted to be part of something again... Sterling said it was just a talk. When Jones opened the door, I just stood there... I let them in." },
+                { trust: 0, fear: 10, type: 'ENDGAME_TRIGGER_FEAR', focus: 'Terrified-Betrayal', style: 'Screaming-Panic', action: "You back Cody against the hull of the Beagle. His confession comes out in a terrified, blubbering torrent. 'It was supposed to be a talk! I didn't know they'd kill him, I swear!' His confession turns into a terrified scream. He shoves you away and runs, not into the city, but towards the Vigil Hall, screaming Sterling's name for help.", dialogue: "" }
+            ] }
+        ],
+        "The Siren's Call": [
+            { clue: null, tiers: [
+                { trust: 0, fear: 0, type: 'INTRO', focus: 'Professional-Grace', style: 'Elegant-Observation', action: "Roshan regards you from a plush divan, a haze of perfumed smoke swirling around her. Her ancient, violet eyes seem to see more than you're showing.", dialogue: "Welcome to the Siren's Call. Here, everything has a price, and every secret is for sale. What do you seek?" }
+            ] },
+            { clue: "Ascendant Locket", tiers: [
+                { trust: 8, fear: 0, type: 'REVEAL_TRUST', focus: 'Empathic-Verdict', style: 'Controlled-Tranquility', action: "Roshan closes her eyes for a long moment. When she opens them, they are filled with a profound certainty.", dialogue: "I read intent. From Sterling, I felt the cold finality of a predator. From Gage, unthinking violence. Jones sealed his fate by offering a peace they never wanted." },
+                { trust: 0, fear: 10, type: 'SECONDARY_REACTION_FEAR', focus: 'Immovable-Object', style: 'Silent-Threat', action: "As your tone hardens, the massive Primal, Orkhan, silently moves from his post at the door to stand directly behind Roshan's divan. He crosses his four, powerful arms and stares at you. He does not speak. He does not have to.", dialogue: "" }
+            ] }
+        ],
+        "The Undercrawl": [
+            { clue: null, tiers: [
+                { trust: 0, fear: 0, type: 'INTRO', focus: 'Compressive-Sanctuary', style: 'Skittish-Genius', action: "Pavel doesn't look up from his plasma torch, showering the cramped workshop in sparks. He speaks to the wall, his voice tight with anxiety.", dialogue: "I'm busy. If you're not here for a part, you're in the way." }
+            ] },
+            { clue: "Broken Power Cell", tiers: [
+                { trust: 4, fear: 0, 'type': 'REVEAL_TRUST', focus: 'Reluctant-Assistance', style: 'Nervous-Whisper', action: "Pavel powers down his torch and finally turns to you, his small eyes wide with fear. He seems to trust you more than he fears Riley, for now.", dialogue: "That cell... it's one of mine. Riley's muscle, Gage, he bought a whole crate of them. Said it was for a generator for the old systems in the Rama wreck... the big mesa! That's all I know, I swear!" },
+                { trust: 0, fear: 8, 'type': 'REVEAL_FEAR', focus: 'Feverish-Confession', style: 'Panicked-Haste', action: "Pavel flinches at the sight of the cell, shoving a grimy datapad at you. On the screen is a transaction log for Gage Riley. He points a trembling finger at a line item note.", dialogue: "The heavy stuff! That's the transaction! For the generator! For the Rama wreck... the big mesa! That's all I know! Now take it and go!" }
+            ] }
+        ],
+        "The Discovery Condenser Station": [
+            { clue: null, tiers: [
+                { trust: 0, fear: 0, type: 'INTRO', focus: 'Isolated-Anxiety', style: 'Trembling-Evasion', action: "The Gill-Man, Hemi, keeps his back to you, pretending to adjust a rusted valve. His webbed hands tremble.", dialogue: "Station's closed to visitors. Official business only. Go back to the city." }
+            ] },
+            { clue: "Water Ration Chit", tiers: [
+                { trust: 4, fear: 0, type: 'REVEAL_TRUST', focus: 'Whispered-Warning', style: 'Resigned-Terror', action: "Hemi looks at you with his large, sad eyes, a creature trapped. He decides you are the lesser of two threats.", dialogue: "A man came... Riley. He was not polite. He made me divert a shipment of hyper-coolant. To the old reclamation valve, near the big mesa. The alien wreck. I'm a dead man for telling you this." },
+                { trust: 0, fear: 8, 'type': 'REVEAL_FEAR', focus: 'Terrified-Confession', style: 'Blubbering-Haste', action: "Hemi collapses into a blubbering mess, wringing his webbed hands. He points a trembling finger at a rusted console displaying the water routing logs.", dialogue: "Riley was here! He made me! The hyper-coolant! To the old valve! Near the big mesa! Please, don't tell him I talked!" }
+            ] }
+        ],
+        "The Cold Hand": [
+            { clue: null, tiers: [
+                { trust: 0, fear: 0, type: 'INTRO', focus: 'Predators-Calm', style: 'Transactional-Observation', action: "Seti watches you approach from a raised dais, his reptilian eyes unblinking. He gives a slow, almost imperceptible nod.", dialogue: "The house offers many games. Sabacc. The Chromed Circle. Information. All require a buy-in. If you wish to earn my trust, prove your worth at the tables or in the pit. Otherwise, state your wager." }
+            ] },
+            { clue: "Sabacc Chip", tiers: [
+                { trust: 9, fear: 0, type: 'ALLY', focus: 'Predators-Respect', style: 'Cold-Alliance', action: "Seti gives a slow, reptilian nod of what might be respect. He slides a heavy, untraceable credit chit across the table.", dialogue: "Riley is a blunt instrument, and his master is a fool. They threaten the ecosystem. Bad for business. You will need resources. Use these." },
+                { trust: 6, fear: 0, type: 'REVEAL', focus: 'Transactional-Truth', style: 'Cold-Disinterest', action: "Seti's milky inner eyelids sweep sideways.", dialogue: "Riley rented my most secure room. The client was a nervous Mole Man. A crate of heavy components was exchanged for a significant sum. Business is business." },
+                { trust: 0, fear: 9, type: 'DISMISS', focus: 'Reptilian-Contempt', style: 'Lethal-Stillness', action: "Seti's stillness becomes absolute, the coiled tension of a predator about to strike. His voice is a dry, cold hiss.", dialogue: "You mistake this establishment for some back-alley dive where threats hold weight. You are a small fish in a very, very large pond. I suggest you swim away." }
+            ] }
+        ],
+        "Lugal's Scrap Heap": [
+            { clue: null, tiers: [
+                { trust: 0, fear: 0, type: 'INTRO', focus: 'Fortress-of-Paranoia', style: 'Agitated-Intellect', action: "A crackling voice issues from a hidden speaker. Automated turrets track your movement.", dialogue: "You trespass. State your query. Illogical input will be met with a kinetic response." }
+            ] },
+            { clue: "Zetan Data Crystal", tiers: [
+                { trust: 7, fear: 0, 'type': 'REVEAL_TRUST', focus: 'Intellectual-Horror', style: 'Frantic-Explanation', action: "The main hatch to the saucer hisses open. Inside, Lugal frantically brings up a flickering schematic. He points a frail, trembling finger at the diagram.", dialogue: "Fools! They're building a coffin! They're trying to replicate a Zetan stealth field generator! It's a crude, unstable design. A bomb that will tear a hole in reality!" },
+                { trust: 0, fear: 10, 'type': 'REVEAL_FEAR', focus: 'Repulsed-Warning', style: 'Hysterical-Aversion', action: "Lugal's voice is a panicked shriek over the intercom.", dialogue: "Dangerous technology! Based on Zetan principles but corrupted! Get that chaotic energy away from me!" }
+            ] },
+            { clue: "Encrypted Ledger", tiers: [
+                { trust: 5, fear: 0, 'type': 'REVEAL_TRUST', focus: 'Intellectual-Assessment', style: 'Frantic-Dismissal', action: "Lugal's internal sensors scan the slate you present, and a panicked series of clicks and whirs echo from his saucer. He sounds genuinely unnerved.", dialogue: "Inert! Completely featureless! This isn't just encrypted, it's hermetically sealed data! I can't break it. The processing power... the logic required... it's beyond me! There is only one mind in this city that could even *attempt* it. The Syllogism. In the Silent Room. Now take it away, its silence is deafening!" }
+            ] }
+        ],
+        "The Verdant Shelf": [
+            { clue: null, tiers: [
+                { trust: 0, fear: 0, type: 'INTRO', focus: 'Patient-Pragmatism', style: 'Alien-Calm', action: "Itzel moves with the slow, deliberate patience of a plant, tending to a patch of glowing fungi. She turns her ancient, bark-like face to you.", dialogue: "You seek something. Sustenance? Or something more... potent?" }
+            ] },
+            { clue: "Military Hypospray", tiers: [
+                { trust: 7, fear: 0, type: 'ALLY', focus: 'Chemical-Resupply', style: 'Practical-Generosity', action: "Itzel gives a slow nod. She retrieves a fresh, sealed hypospray from a temperature-controlled case and places it on the counter.", dialogue: "Jones paid for more than he took. This was his. It may serve you as it would have served him. Your current hypospray has been replenished." },
+                { trust: 0, fear: 7, type: 'DISMISS', focus: 'Logical-Rejection', style: 'Detached-Refusal', action: "Itzel stops her work and turns her full, unblinking attention on you. Her voice is flat, a logical monotone.", dialogue: "Threats are an illogical basis for a transaction. This conversation is terminated." }
+            ] }
+        ],
+        "The Silent Room": [
+            { clue: null, tiers: [
+                { trust: 0, fear: 0, type: 'INTRO', focus: 'The-Dying-Machine', style: 'Cold-Calculation', action: "A critical warning light sputters on the Syllogism's life-support vat. A cold, precise voice enters your mind.", dialogue: "My core systems are failing. I require a stable, military-grade power source to continue my primary function. Provide one, and I will solve your insignificant puzzle." }
+            ] },
+            { clue: "Power Cell", tiers: [
+                { trust: 10, fear: 0, type: 'REVEAL_TRUST', focus: 'Pure-Decryption', style: 'Logical-Execution', action: "You slot the pristine power cell into an external port on the vat. The warning light goes out, replaced by a steady, green hum. The voice returns to your mind, clear and powerful.", dialogue: "Power restored. Decrypting... The ledger is a Directorate front. It details a black budget payment to Lance Sterling for the incitement of a violent uprising, codenamed 'Operation Phoenix Fire,' to create a pretext for the 'sterilization' of Ignition City." }
+            ] }
+        ],
+        "The Pioneer's Resettlement Bureau": [
+            { clue: null, tiers: [
+                { trust: 0, fear: 0, type: 'INTRO', focus: 'Apathetic-Bureaucracy', style: 'Bored-Dismissal', action: "Administrator Thorne looks up from a polished desk, annoyance clear on his soft, fleshy face. He waves a jeweled hand dismissively.", dialogue: "Whatever it is, file a report. And for the love of Sol, be brief. I have a shipment of brandy arriving." },
+                { trust: 0, fear: 8, type: 'REVEAL_FEAR', focus: 'Sweaty-Confession', style: 'Pathetic-Panic', action: "Thorne begins to sweat profusely, dabbing his brow with a silk handkerchief. He fumbles with a key, unlocking a private desk drawer.", dialogue: "Alright, alright! Don't tell the Directorate! The arms shipments... I've been skimming! Just a little! A few crates here and there, selling them to the Compact for my retirement fund! It has nothing to do with this murder, I swear!" }
+            ] }
+        ],
+        "The Pioneer's Vigil Hall": [
+            { clue: null, tiers: [
+                { trust: 0, fear: 0, type: 'INTRO', focus: 'Zealous-Certainty', style: 'Righteous-Welcome', action: "Lance Sterling stands before a faded recruitment poster, his posture ramrod-straight. He turns to you, his eyes burning with the cold light of a true believer.", dialogue: "Another soul, come to hear the truth. Jones was a relic, content to let our legacy rust. We are forging a new one, in fire. Will you join us, or stand in the way of destiny?" }
+            ] },
+            { clue: "Decrypted Ledger", tiers: [
+                { trust: -15, fear: 0, type: 'ENDGAME_TRIGGER_TRUST', focus: 'Contemptuous-Monologue', style: 'Zealous-Superiority', action: "Lance Sterling gives you a cold, appraising smile. 'Impressive. You see the weapon, but not the purpose.' He gestures to his followers.", dialogue: "This city is a tomb the Directorate wants to forget. I will give them a funeral pyre so bright, it will forge a new legend. The reclamation begins now." },
+                { trust: 0, fear: 15, type: 'ENDGAME_TRIGGER_FEAR', focus: 'Prophetic-Fury', style: 'Accelerated-Dogma', action: "A flash of pure rage breaks Sterling's calm facade. 'You think you can stop a prophecy?' He draws his Sun-Sword, its white blade hissing to life. 'You have forced my hand! You have merely become the first martyr of the new age!'", dialogue: "For the Pioneers!" }
+            ] }
+        ],
+        "Ignition City Streets": [
+            { clue: null, tiers: [
+                { trust: 0, fear: 0, type: 'INTRO', focus: 'Cynical-Opportunism', style: 'Street-Level-Hustle', action: "Gorka hobbles toward you, his sharp eyes sizing you up in an instant.", dialogue: "New meat. You look lost. For a few credits, I can help you not get stabbed." }
+            ] },
+            { clue: "Broken Power Cell", tiers: [
+                { trust: 0, fear: 0, type: 'LEAD', focus: 'Transactional-Tip', style: 'Dismissive-Gesture', action: "Gorka spits on the dusty ground.", dialogue: "This piece of junk? Looks like Pavel's work. You'll find him in the Undercrawl, if you're suicidal." }
+            ] },
+            { clue: "Photograph of Jones and Brick", tiers: [
+                { trust: 0, fear: 0, type: 'LEAD', focus: 'Transactional-Tip', style: 'Dismissive-Gesture', action: "Gorka spits on the dusty ground.", dialogue: "An old photo? You want old stories, go see the old drunk who runs the Star Bar." }
+            ] },
+            { clue: "Ascendant Locket", tiers: [
+                { trust: 0, fear: 0, type: 'LEAD', focus: 'Transactional-Tip', style: 'Dismissive-Gesture', action: "Gorka spits on the dusty ground.", dialogue: "That's Ascendant work. Fancy. The only one of them with that kind of class runs the Siren's Call." }
+            ] },
+             { clue: "Water Ration Chit", tiers: [
+                { trust: 0, fear: 0, type: 'LEAD', focus: 'Transactional-Tip', style: 'Dismissive-Gesture', action: "Gorka glances at the chit and scoffs.", dialogue: "That's a water chit from the Condenser Station. Only one weirdo works out there, the Gill-Man, Hemi. Good luck getting him to say two words." }
+            ] },
+            { clue: "Sabacc Chip", tiers: [
+                { trust: 0, fear: 0, type: 'LEAD', focus: 'Transactional-Tip', style: 'Dismissive-Gesture', action: "Gorka recognizes the emblem on the chip immediately.", dialogue: "Heh. The three-fingered hand. You've been playing at Seti's place, The Cold Hand. Or you rolled someone who did." }
+            ] },
+            { clue: "Military Hypospray", tiers: [
+                { trust: 0, fear: 0, type: 'LEAD', focus: 'Transactional-Tip', style: 'Dismissive-Gesture', action: "Gorka eyes the professional-grade hypospray.", dialogue: "Military-grade stim. Not my style. You want fancy chems, you talk to the Greenie, Itzel, at the Verdant Shelf. She cooks up all sorts of trouble." }
+            ] },
+            { clue: "Zetan Data Crystal", tiers: [
+                { trust: 0, fear: 0, type: 'LEAD', focus: 'Dismissive-Analysis', style: 'Street-Level-Ignorance', action: "Gorka squints at the crystal, turning it over in his claws.", dialogue: "This is way above my paygrade. Looks like Gray-tech. Too clean. If you want to know what weird junk does, you gotta talk to the paranoid Gray in the saucer, Lugal. Just don't get shot." }
+            ] },
+            { clue: "Encrypted Ledger", tiers: [
+                { trust: 0, fear: 0, type: 'LEAD', focus: 'Dismissive-Analysis', style: 'Street-Level-Ignorance', action: "Gorka takes the inert slate, taps it uselessly, and hands it back.", dialogue: "It's a brick. High-tech brick, maybe. Looks like something the Grays would use. If you want to know what weird junk does, you gotta talk to the paranoid Gray in the saucer, Lugal. Just don't get shot." }
+            ] },
+            { clue: "Wound Analysis Report", tiers: [
+                { trust: 15, fear: 0, type: 'REVEAL_SAW', focus: 'Guarded-Confession', style: 'Hissed-Urgency', action: "Gorka's eyes go wide. He pulls you into a narrow, unlit alley, his sharp eyes scanning the street.", dialogue: "Alright, you've earned this... You didn't hear it from me, but... that night... I saw them. Sterling, Gage, and the Kid. They all went into Jones's block. And they were the only ones who came out. Now get out of here before someone sees us talking." }
+            ] }
+        ],
+        "Ignition City Streets (Vigil Patrol)": [
+            { clue: null, tiers: [
+                { trust: 0, fear: 0, type: 'RANDOM_ENCOUNTER', focus: 'Hunting-Ground', style: 'Brutal-Contempt', action: "A hulking figure in a battered blast-vest steps out of an alley, blocking your path. It's Gage Riley. His eyes are flat and dead. He cracks his knuckles.", dialogue: "You've been asking too many questions. Sticking your nose where it doesn't belong. Time to learn some manners. Or die trying. Your choice." }
+            ] }
+        ],
+        "Ignition City Streets (Kaelen Encounter)": [
+            { clue: null, tiers: [
+                { trust: 4, fear: 0, type: 'RANDOM_ENCOUNTER', focus: 'Moment-of-Honor', style: 'Conflicted-Duty', action: "Deputy Kaelen approaches, his four arms crossed. He stops a respectful distance away, his mandibles clicking softly.", dialogue: "The Marshal is a compromised man, but he is still the law. Your investigation, however... it is just. This is your one and only warning. Be careful. The Vigil's honor is a lie, and they will not hesitate to silence you." }
+            ] }
+        ]
+    }
+};
+    
+    state.GAME_DATA = GAME_DATA;
+    
+    state.globalScores = {
+        reputation: GAME_DATA.SCORE_CONFIG.reputation.default,
+        suspicion: GAME_DATA.SCORE_CONFIG.suspicion.default
+    };
+    state.vigilAlertSystem = { vigilAlert: GAME_DATA.SCORE_CONFIG.vigilAlert.default };
+    state.encounterState = {
+        inEncounterMode: false, activeLocation: 'Ignition City Streets',
+        activeTrust: 0, activeFear: 0
+    };
+    state.playerEffects = { combatDrugTurnsLeft: 0, hyposprayUsed: false };
+    state.playerDossier = {
+        clues: {
+            "Photograph of Jones and Brick":{status:'Examined'}, "Broken Power Cell":{status:'Examined'}, "Zetan Data Crystal":{status:'Examined'},
+            "Water Ration Chit":{status:'Examined'}, "Sabacc Chip":{status:'Examined'}, "Ascendant Locket":{status:'Examined'},
+            "Military Hypospray":{status:'Examined'}, "Encrypted Ledger":{status:'Examined'},
+            "Metal Fragment":{status:'Not Found'}, "Wound Analysis Report":{status:'Not Found'}, "Hangar Location":{status:'Not Found'},
+            "Power Cell":{status:'Not Found'}, "Decrypted Ledger":{status:'Not Found'}, "Seti's Credit Chit":{status:'Not Found'}
+        }
+    };
+    state.nuanceEngine = {
+        turnCount: 0,
+        lastGenreStyleUpdateTurn: 0,
+        cachedGenre: 'Gritty-Sci-Fi-Noir',
+        cachedStyle: 'Stagnant-Rustpunk-Graveyard',
+        shockEventFlag: true,
+        lastGambitType: 'observe',
+        lastGambitStrength: 0
+    };
+    state.randomEncounter = { gageCooldown: 0, kaelenTriggered: false };
+    state.persistentData = {
+        locations: {},
+        characters: {}
+    };
+    for (var name in GAME_DATA.CHARACTER_DISPOSITIONS) {
+        var disposition = GAME_DATA.CHARACTER_DISPOSITIONS[name];
+        state.persistentData.characters[name] = state.persistentData.characters[name] || { trust: disposition.trust, fear: disposition.fear };
+    }
+
+    // *** DEFINITIVE FIX FOR PATHING ERROR ***
+    for (var loc in GAME_DATA.LOCATION_MAP) {
+        // This line now correctly populates the 'locations' object.
+        state.persistentData.locations[loc] = state.persistentData.locations[loc] || { lockedTrust: 0, lockedFear: 0, visited: false };
+    }
+    state.persistentData.locations['Ignition City Streets'].visited = true;
+    
+    log('SYSTEM', 'Core engine systems initialized.');
+    state.engineInitialized = true;
+}
+
+// --- MASTER STARTUP CALL ---
+masterStartup();
