@@ -14,7 +14,6 @@ const modifier = (text) => {
         state.shared.messageQueue = [];
     }
 
-    const combatDuration = getConfig('combatDrugDuration');
     if (state.playerEffects.combatDrugTurnsLeft > 0) {
         state.playerEffects.combatDrugTurnsLeft--;
         if (state.playerEffects.combatDrugTurnsLeft === 0) {

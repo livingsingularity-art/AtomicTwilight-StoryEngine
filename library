@@ -92,7 +92,12 @@ function exitEncounter() {
             var repChange = Math.round(locData.lockedTrust / 4);
             var suspChange = Math.round(locData.lockedFear * 1.5) + (locData.lockedTrust < 0 ? 3 : 0);
             state.globalScores.reputation = clampScore(state.globalScores.reputation + repChange, 'reputation');
-            state.globalScores.suspicion = clampScore(state.globalScores.suspicion + suspChange, 'suspicion');
+            var oldSuspicion = state.globalScores.suspicion;
+            state.globalScores.suspicion = clampScore(oldSuspicion + suspChange, 'suspicion');
+            var actualChange = state.globalScores.suspicion - oldSuspicion;
+            if (actualChange !== 0) {
+                processHeatAccumulator(actualChange);
+            }
         }
     }
     state.encounterState.inEncounterMode = false;
@@ -151,7 +156,7 @@ function processSocialGambit(playerInput) {
         state.encounterState.activeFear = clampScore(state.encounterState.activeFear + fearChange, 'fear');
     } else {
         var charKey = state.GAME_DATA.LOCATION_TO_CHARACTER_MAP[state.encounterState.activeLocation] || 'Gorka';
-        var charData = state.persistentData[charKey];
+        var charData = state.persistentData.characters[charKey];
         if (charData) {
             charData.trust = clampScore(charData.trust + trustChange, 'trust');
             charData.fear = clampScore(charData.fear + fearChange, 'fear');
@@ -163,14 +168,14 @@ function assembleAuthorsNote(inputOverride) {
     ensureStateShape();
     if (!state.originalAuthorsNote) {
         var currentUserNote = extractUserAuthorsNote(state.memory.authorsNote);
-        state.originalAuthorsNote = '[Genre:{{genre}}] [Phase:{{phase}}] [Focus:{{focus}}] [Theme:{{theme}}] [Style:{{style}}] [Directive:{{directive}}]';
+        state.originalAuthorsNote = '[Genre:{{genre}}] [Phase:{{phase}}] [Focus:{{focus}}] [Theme:{{theme}}] [Style:{{style}}] [Directive:{{directive}}] {{debug}}';
         if (currentUserNote) {
             state.preservedUserNote = currentUserNote;
         }
     }
     var override = inputOverride || null;
     var charKey = state.GAME_DATA.LOCATION_TO_CHARACTER_MAP[state.encounterState.activeLocation] || 'Gorka';
-    var charData = state.persistentData[charKey] || { trust: 0, fear: 0 };
+    var charData = state.persistentData.characters[charKey] || { trust: 0, fear: 0 };
     var gs = {
         alert: state.vigilAlertSystem.vigilAlert || 1,
         rep: state.globalScores.reputation || -20,
@@ -277,6 +282,10 @@ function processHeatAccumulator(suspicionChange) {
         state.vigilAlertSystem.heat = Math.max(0, state.vigilAlertSystem.heat + (suspicionChange * heatRatio));
     } else {
         state.vigilAlertSystem.heat = Math.max(0, state.vigilAlertSystem.heat - heatDecay);
+    }
+
+    if (state.vigilAlertSystem.cooldownMode) {
+        return;
     }
 
     var currentHeat = state.vigilAlertSystem.heat;

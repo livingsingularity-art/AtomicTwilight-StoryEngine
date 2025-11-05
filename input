@@ -110,25 +110,17 @@ const modifier = (text) => {
         }
 
         let suspicion = state.globalScores.suspicion;
-        let vigilAlert = state.vigilAlertSystem.vigilAlert;
 
         const suspicionPerTurn = getConfig('suspicionPerTurn');
-        const suspicionThreshold = getConfig('suspicionThreshold');
-        const vigilIncrement = getConfig('vigilAlertIncrement');
 
-        suspicion = clampScore(suspicion + suspicionPerTurn, 'suspicion');
-
-        if (suspicion >= suspicionThreshold) {
-            state.globalScores.suspicion = 0;
-            state.vigilAlertSystem.vigilAlert = clampScore(vigilAlert + vigilIncrement, 'vigilAlert');
-            message("You feel a new set of eyes on you. The Vigil is getting nervous.");
-        } else {
+        if (!state.vigilAlertSystem.cooldownMode) {
+            suspicion = clampScore(suspicion + suspicionPerTurn, 'suspicion');
             state.globalScores.suspicion = suspicion;
         }
-
-        processCooldownSystem();
     }
-   
+
+    processCooldownSystem();
+
     updateCoreState();
 
     return { text };

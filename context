@@ -55,8 +55,8 @@ const modifier = (text) => {
         }
         
         if (secret) {
-            const trust = state.encounterState.inEncounterMode ? state.encounterState.activeTrust : (state.persistentData[targetCharacter] ? state.persistentData[targetCharacter].trust : 0);
-            const fear = state.encounterState.inEncounterMode ? state.encounterState.activeFear : (state.persistentData[targetCharacter] ? state.persistentData[targetCharacter].fear : 0);
+            const trust = state.encounterState.inEncounterMode ? state.encounterState.activeTrust : (state.persistentData.characters[targetCharacter] ? state.persistentData.characters[targetCharacter].trust : 0);
+            const fear = state.encounterState.inEncounterMode ? state.encounterState.activeFear : (state.persistentData.characters[targetCharacter] ? state.persistentData.characters[targetCharacter].fear : 0);
             let chosenTier = null;
             
             for (let i = secret.tiers.length - 1; i >= 0; i--) {
