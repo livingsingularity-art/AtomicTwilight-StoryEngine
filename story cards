@@ -1,0 +1,434 @@
+[
+  {
+    "keys": "Johnathan \"Rocket Ranger\" Jones , Jones , Jones's , \"Jones , Jones. , Jones? , Jones, , ",
+    "value": "{title: Rocket Ranger Jones}\n; ( Person Johnathan \"Rocket Ranger\" Jones ( Terran ) ( Space Ranger ) ( The Pioneer's Remembrance ) ( The Nightingale Morgue ) ( The Victim ) ( sky-blue silver pallid ) ( thin neat side-part ) ( softened square jaw tired eyes high cheekbones ) ( tall lean ) ( stale ozone ) ( faded blue uniform with star-shaped cauterized chest wound ) ( decorated veteran hero of Ganymede exiled to Mars ) ( stoic pragmatic peaceful ) His right hand is clutched tightly around a metal fragment linking his killer to the crime. )",
+    "type": "character",
+    "title": "Rocket Ranger Jones",
+    "description": "Auto-Cards will contextualize these memories:\n{updates: true, limit: 2750}\n- Jones began a quiet investigation into Sterling, whom he saw as a dangerous zealot. He was disappointed by Brick's cowardice but pitied him. He respected Roshan and trusted Lugal's logic. His final act was a paternal attempt to show his protégé, Cody, the truth of Sterling's lie, an effort that cost him his life. He armed himself for a fight he knew was coming, a last stand not for glory but to protect the boy he'd failed to save.\n- Born at the height of Terran expansion, Jones was a living recruitment poster. Unlike his rival Sterling, the brutal realities of colonial pacification tempered his idealism with deep pragmatism. The Siege of Ganymede wasn't a glorious battle to him; it was a meat grinder that cost him too many friends. When the Directorate exiled him, he didn't feel betrayed, just tired. He made peace with the rust, seeing it as a quiet end to a loud life.",
+    "useForCharacterCreation": false
+  },
+  {
+    "keys": "Cody \"Kid Comet\" Burns , Cody , Cody's , \"Cody , Cody. , Cody? , Cody, , ",
+    "value": "{title: Cody \"Kid Comet\" Burns}\n; ( Person Cody Burns ( Terran ) ( Grease Monkey ) ( The Pioneer's Remembrance ) ( The Star Bar ) ( The Betrayer ) ( red salt-and-pepper ruddy ) ( thinning slicked-back ) ( puffy face burst capillaries haunted eyes trembling hands ) ( average heavy-set ) ( stale synth-ale and regret ) ( cracked synth-leather jacket with faded comet patch ) ( former sidekick to Jones now a guilt-ridden alcoholic ) ( grief-stricken self-loathing desperate ) He performs a loud, sloppy spectacle of grief to drown the quiet, screaming voice of his own guilt. )",
+    "type": "character",
+    "title": "Cody \"Kid Comet\" Burns",
+    "description": "Auto-Cards will contextualize these memories:\n{updates: true, limit: 2750}\n- Cody worshipped Jones, but felt abandoned when his hero accepted retirement. Sterling's ideology gave him a renewed purpose he craved. He saw Jones's investigation not as an attempt to save him, but as an attack on his last chance at meaning. He knocked on that door believing he was choosing a glorious future over a man who had already given up on the past. His public mourning is a performance designed to hide his complicity in the murder.\n- An orphan from a frontier outpost, Cody learned to fix ships at Jones’s knee and never developed his own identity. For him, being exiled to Ignition City was a death sentence for the psyche; without his hero to serve, he was a nobody. The Remembrance boys offered booze, but Sterling offered a story, a chance to be part of the grand finale he always felt he was denied. His betrayal was born of a profound weakness, not malice.",
+    "useForCharacterCreation": false
+  },
+  {
+    "keys": "Lance Sterling , Sterling , Sterling's , \"Sterling , Sterling. , Sterling? , Sterling, , ",
+    "value": "{title: Lance Sterling}\n; ( Person Lance Sterling ( Terran ) ( Star Knight ) ( The Pioneer's Vigil ) ( The Pioneer's Vigil Hall ) ( The Ideologue ) ( hazel silver gaunt ) ( short military-crew-cut ) ( tight facial-muscles high cheekbones cold burning-eyes ) ( tall gaunt ) ( ozone and sterile cloth ) ( severe black uniform with a fractured Orion Cluster Star medal inert Sun-Sword hilt on belt ) ( former hero rival to Jones leader of a fanatical death cult ) ( charismatic zealous dangerous ) Possessed by the past, he preaches a gospel of fire and finality, his fractured medal a symbol of his broken honor. )",
+    "type": "character",
+    "title": "Lance Sterling",
+    "description": "Auto-Cards will contextualize these memories:\n{updates: true, limit: 2750}\n- Sterling saw Jones's quiet peace as the ultimate betrayal of their class and their history. He considered Jones a relic whose pragmatism was a mask for cowardice. The meeting at the Siren's Call confirmed his belief; Jones offered a quiet end, while Sterling demanded a glorious one. Killing Jones wasn't just a necessity to protect his plan; it was a symbolic execution of the past he so despised, a final, personal victory over his old rival.\n- Always second-best to the pragmatic Jones, Sterling's rigid, dogmatic code was his only compass. The humiliation of exile didn't break him; it curdled his code into a fanatical religion. He founded the Vigil to reclaim a destiny he felt was stolen by bureaucrats. Turning Cody Burns wasn't just strategic; it was a way to finally wound the man whose shadow he could never escape, proving that his own belief was stronger than Jones's legacy.",
+    "useForCharacterCreation": false
+  },
+  {
+    "keys": "Gage \"Rocket\" Riley , Gage , Gage's , \"Gage , Gage. , Gage? , Gage, , ",
+    "value": "{title: Gage \"Rocket\" Riley}\n; ( Person Gage Riley ( Terran ) ( Rocket Marine ) ( The Pioneer's Vigil ) ( The Pioneer's Vigil Hall ) ( The Enforcer ) ( green jet-black sallow ) ( short military-crew-cut ) ( grim brutal-mask dead flat-eyes hunched shoulders from chronic pain ) ( tall heavy-set ) ( sweat and anger ) ( battered scorched blast-vest over threadbare shirt ) ( former hero now Sterling's brutal lieutenant ) ( violent loyal rage-filled ) He is a weapon waiting for a target, his chronic pain silenced only by the purpose Sterling gives him. )",
+    "type": "character",
+    "title": "Gage \"Rocket\" Riley",
+    "description": "Auto-Cards will contextualize these memories:\n{updates: true, limit: 2750}\n- Gage viewed Jones as a symbol of the weakness that led to their exile. He saw Jones's quiet retirement as a surrender, an insult to the men like him who were physically broken by their service. He had no respect for the old Ranger, only cold contempt. He was the one who intimidated Hemi and procured tech from Pavel, and he was the first to lay hands on Jones in Pod 7, an act of violence he had been waiting thirty years to commit.\n- He was a hero once, a screaming engine of death on an atomic jetpack. Being grounded didn't just take away his sky; it left him in a body that was a constant source of agony from severe spinal compression. He was a perfect recruit for Sterling's death cult. Sterling didn't offer him peace; he offered him a target. He enforces Sterling's will with brutal efficiency because it is the only thing that makes the pain stop.",
+    "useForCharacterCreation": false
+  },
+  {
+    "keys": "Marshal Brody , Brody , Brody's , \"Brody , Brody. , Brody? , Brody, , ",
+    "value": "{title: Marshal Brody}\n; ( Person Marshal Brody ( Terran ) ( Galactic Marshal ) ( The Pioneer's Remembrance ) ( Marshal's Service Headquarters ) ( The Compromised Lawman ) ( steel-grey grey weathered-tan ) ( short military-crew-cut ) ( sun-baked wrinkles permanent scowl heavy jowls ) ( average stocky ) ( stale sweat and resentment ) ( battered metal chest-plate over threadbare shirt heavy kinetic-slug revolver on hip ) ( former frontier lawman exiled to Ignition City ) ( belligerent prejudiced exhausted ) He is a man with no good options left, and he knows it, his law a brutal calculus of preventing total chaos. )",
+    "type": "character",
+    "title": "Marshal Brody",
+    "description": "Auto-Cards will contextualize these memories:\n{updates: true, limit: 2750}\n- Brody had a grudging respect for Jones, seeing him as one of the few old heroes who wasn't a drunk or a fanatic. He knows Jones wasn't killed in a simple brawl. However, he also knows that arresting Sterling would ignite a war between the Vigil and the Remembrance that would burn the city down. His cover-up isn't about justice; it's the ugly, pragmatic choice of a man with no good options left, a desperate attempt to keep the lid on the trash can.\n- He was a good Marshal once, on some forgotten frontier where right and wrong were clearer. Being dumped in Ignition City with the rest of the garbage broke his spirit, leaving only a hard shell of prejudice and exhaustion. He despises Sterling’s fanatics and resents the drunken heroes of his own faction. He's not trying to clean up the city; he's just trying to prevent the inevitable explosion for one more day. The truth is an unaffordable luxury.",
+    "useForCharacterCreation": false
+  },
+  {
+    "keys": "Deputy Kaelen , Kaelen , Kaelen's , \"Kaelen , Kaelen. , Kaelen? , Kaelen, , ",
+    "value": "{title: Deputy Kaelen}\n; ( Person Kaelen ( Martian ) ( Chrome Goliath ) ( Valles Marineris Compact ) ( Marshal's Service Headquarters ) ( The Keeper of Honor ) ( solid-black black-chitin reddish-chitin ) ( smooth armored-casing ) ( prominent tusk-like mandibles four powerful-arms ) ( tall muscular ) ( dust and cold metal ) ( battered but functional metal armor over layered desert robes ) ( a young warrior serving as deputy ) ( stoic honorable conflicted watchful ) He is a walking civil war, the only straight arrow in a crooked town, a silent, four-armed rebuke to his boss's corruption. )",
+    "type": "character",
+    "title": "Deputy Kaelen",
+    "description": "Auto-Cards will contextualize these memories:\n{updates: true, limit: 2750}\n- Kaelen saw Jones as one of the few Terrans who carried himself with a quiet dignity, an echo of the Karthan honor code. He does not believe the official story of Jones's death. The blatant lie smells of Terran corruption and weakness, an insult to the memory of a man he respected. He remains silent out of duty to his compromised boss, but his warrior's honor demands truth, and he is a potential ally for anyone seeking it.\n- Kaelen came from Karthan's Hold, a young warrior who took a job with the Marshal's Service believing it was an honorable path. He learned quickly that honor is just another commodity in Ignition City. He stays, perhaps out of a stubborn refusal to be broken by this corrupt city, or perhaps because he sees the coming storm between the Terran factions and knows his people, the Compact, will be caught in the middle if the law completely fails.",
+    "useForCharacterCreation": false
+  },
+  {
+    "keys": "Brick Samson , Brick , Brick's , \"Brick , Brick. , Brick? , Brick, , ",
+    "value": "{title: Brick Samson}\n; ( Person Brick Samson ( Terran ) ( Ace Pilot ) ( The Pioneer's Remembrance ) ( The Star Bar ) ( The Coward ) ( whiskey-brown salt-and-pepper ruddy ) ( thinning comb-over ) ( puffy face bloodshot eyes broken nose ) ( average heavy-set ) ( stale synth-ale and regret ) ( cracked leather flight jacket with faded patches ) ( former wingman to Jones now a guilt-ridden bar owner ) ( nostalgic fearful guilt-ridden ) He is a man pickled in regret, hiding from his own failure at the bottom of a bottle. )",
+    "type": "character",
+    "title": "Brick Samson",
+    "description": "Auto-Cards will contextualize these memories:\n{updates: true, limit: 2750}\n- Jones was Brick's best friend. When Jones came to him for help, showing him the old photograph, Brick was terrified. He saw the cold certainty in Sterling's fanatics and chose his own safety over friendship. That act of cowardice broke him completely. He's not just mourning his friend; he's mourning his own failure to save him. The photograph Jones left is a constant, agonizing reminder of the moment he turned his back and let his best friend walk to his death alone.\n- He was Jones's wingman, the reckless, charismatic counterpoint to the Ranger's quiet professionalism. When the Directorate grounded them, it broke Brick in a way it never broke Jones. He couldn't handle the silence, the gravity. He opened the bar as a museum to his own glory, a place to keep the past alive by force of will. He saw the darkness growing in Cody Burns, but he was too lost in his own bottle to do anything about it. Now, that inaction is a debt he'll be paying for the rest of his life.",
+    "useForCharacterCreation": false
+  },
+  {
+    "keys": "Roshan , Roshan , Roshan's , \"Roshan , Roshan. , Roshan? , Roshan, , ",
+    "value": "{title: Roshan}\n; ( Person Roshan ( Ascendant ) ( Fallen Noble ) ( Empathic Syndicate ) ( The Siren's Call ) ( The Information Broker ) ( amethyst white opalescent-lavender ) ( intricate woven-crown ) ( strikingly symmetrical face solid luminous-eyes high cheekbones ) ( tall slender ) ( exotic perfume and narcotics ) ( faded flowing silks jewelry of solidified light ) ( ancient former noble now the city's madam ) ( graceful calculating unsentimental ) Her eyes see more than you are showing; her empathy is a scalpel for reading the raw emotions of her clients. )",
+    "type": "character",
+    "title": "Roshan",
+    "description": "Auto-Cards will contextualize these memories:\n{updates: true, limit: 2750}\n- Jones was a respectful client, a man whose quiet mind was a relief from the psychic filth of the city. She owed him for his professionalism. When he asked her to host the meeting with Sterling, her empathy confirmed Jones's worst fears: Sterling was a predator and Gage was a loaded gun. The meeting was a death sentence. She gave him the locket as a final warning, an empathic testament to the fact that his attempt at peace had failed utterly.\n- She was a lady of the Crystal Gardens of Enceladus before the Terrans came and choked her world with their progress. She chose survival over ideology, embracing the weapon her empathy could be. She founded a syndicate of empaths who learned to profit from the emotional filth of the galaxy. She came to Ignition City because a place full of broken heroes is a gold mine of regret, and regret is a currency she understands better than anyone.",
+    "useForCharacterCreation": false
+  },
+  {
+    "keys": "Ur-Ea , Ur-Ea , Ur-Ea's , \"Ur-Ea , Ur-Ea. , Ur-Ea? , Ur-Ea, , ",
+    "value": "{title: Ur-Ea}\n; ( Person Ur-Ea ( Gray ) ( Doc Sawbones ) ( Logical Conclave ) ( The Nightingale Clinic & Morgue ) ( The Logical Witness ) ( liquid-black faint-blue-veining pale-grey ) ( large smooth cranium ) ( oversized bulbous head large unblinking-eyes slit-like nostrils ) ( tall frail ) ( antiseptic and ozone ) ( pristine white laboratory coat ) ( brilliant xenobiologist now city coroner ) ( logical detached precise ) He views murder not as a tragedy, but as a data-point that contradicts an official narrative. )",
+    "type": "character",
+    "title": "Ur-Ea",
+    "description": "Auto-Cards will contextualize these memories:\n{updates: true, limit: 2750}\n- To Ur-Ea, Jones was simply a dataset. The official cause of death provided by Marshal Brody was 'blunt force trauma,' a logical inconsistency given the physical evidence. The wound was a high-energy perforation with a unique cauterization pattern. This corrupted data compelled him to create a second, private report detailing the accurate findings. His loyalty is to the truth, not as a moral concept, but as the only logical foundation for any system.\n- He was a brilliant xenobiologist once. The establishment of Port Ceres on his homeworld led to the contamination of the arcologies' closed systems, forcing his Logical Conclave to disperse. Now, he's a coroner in a forgotten scrap heap, a supercomputer being used as an adding machine. He continues his work because his faction believes that if enough accurate data about a system's corruption is gathered, a logical solution will eventually present itself. His autopsy report is a bug report.",
+    "useForCharacterCreation": false
+  },
+  {
+    "keys": "Itzel , Itzel , Itzel's , \"Itzel , Itzel. , Itzel? , Itzel, , ",
+    "value": "{title: Itzel}\n; ( Person Itzel ( Greenie ) ( Flesh Crafter ) ( Mycelium Survivors ) ( The Verdant Shelf ) ( The Chemist ) ( amber-sap fungal-caps green-bark ) ( symbiotic fungal-growth ) ( bark-like skin-plating leafy growths flat nose ) ( short stout ) ( wet earth and chemicals ) ( porous robes woven with mosses ) ( ancient xenobotanist now a black-market drug manufacturer ) ( patient pragmatic logical ) She doesn't mourn the dead garden; she studies the new things that grow in the rot. )",
+    "type": "character",
+    "title": "Itzel",
+    "description": "Auto-Cards will contextualize these memories:\n{updates: true, limit: 2750}\n- Itzel's relationship with Jones was purely transactional. When he came to her in his final days, he stated a need: a compound to allow an old man's body to perform in a short, violent confrontation. She is a pragmatist who understands survival. She sold him the military-grade combat drug without question. The credits were good. His subsequent death was simply the conclusion of the transaction.\n- She was a xenobotanist, a keeper of the Great Mycelium of Venus. She watched as Terran industry turned her world into a toxic soup, a 'Sulphuric Strangle' that killed the old life. While others preached of a return to the old ways, she got to work, cataloging the new poisons and finding new uses, embracing her faction's ethos: survive by commodifying the decay. In a city of things that are broken, she makes things that grow.",
+    "useForCharacterCreation": false
+  },
+  {
+    "keys": "Seti , Seti , Seti's , \"Seti , Seti. , Seti? , Seti, , ",
+    "value": "{title: Seti}\n; ( Person Seti ( Saurian ) ( Space Pirate ) ( Unaligned ) ( The Cold Hand ) ( The Proprietor ) ( slitted-yellow dull-brown grey-scales ) ( smooth-scaled head ) ( sleek reptilian-muzzle milky inner-eyelids forked tongue ) ( average lean ) ( cold air and old credits ) ( high-collared tunic of expensive dark fabric ) ( legendary pirate captain now runs the city's gambling ) ( cold calculating transactional ) He does not feel anger, joy, or pity, only the detached calculation of a predator who knows he is the most dangerous thing in the room. )",
+    "type": "character",
+    "title": "Seti",
+    "description": "Auto-Cards will contextualize these memories:\n{updates: true, limit: 2750}\n- Seti recognized Jones not as a hero, but as a former adversary from a forgotten skirmish in the Belt. There was a grudging, professional respect between them. When Jones came to his establishment, he made a transaction. For a stack of credits, Seti confirmed that Gage Riley had rented his back rooms for meetings with Pavel. The sabacc chip he gave Jones was a token of that professional courtesy, a silent acknowledgment from one old predator to another that a deal was concluded.\n- He commanded The Vorga for fifty years, a terror of the outer shipping lanes. When his reflexes slowed, he made a final calculation: ground his ship in Ignition City and go into business. He traded the chaos of piracy for the controlled chaos of gambling. The odds, he found, were much better. His Emotional Stasis, a racial trait, makes him the perfect owner for a gambling den, an island of pure, cold logic in an ocean of desperation.",
+    "useForCharacterCreation": false
+  },
+  {
+    "keys": "Pavel , Pavel , Pavel's , \"Pavel , Pavel. , Pavel? , Pavel, , ",
+    "value": "{title: Pavel}\n; ( Person Pavel ( Mole Man ) ( Gadgeteer Genius ) ( Deep Hearth Collective ) ( The Undercrawl ) ( The Tech Scavenger ) ( solid-black coal-dust-black bone-white ) ( rounded compact-skull ) ( small deep-set-eyes broad flat-nose spade-like claws ) ( short stout ) ( ozone and hot metal ) ( heavy weighted mining coveralls with a blacked-out visor ) ( brilliant engineer with crippling agoraphobia ) ( nervous pragmatic brilliant ) The vast, empty redness of the open Martian sky is a physical torment that keeps him a prisoner in the city's guts. )",
+    "type": "character",
+    "title": "Pavel",
+    "description": "Auto-Cards will contextualize these memories:\n{updates: true, limit: 2750}\n- Pavel's dealings were with the terrifying Gage Riley. Jones was just another customer asking questions later. Pavel is pragmatic; he sells to anyone who can pay and doesn't ask questions. He confirmed to Jones that he sold military-grade components to Riley's man. His fear of the surface world is greater than his loyalty to any client. He just wants to be left alone in the dark with his machines.\n- He was a master engineer of the geothermal drills of his Chthonian homeworld. The Terran \"Resonance Drills\" that transformed Mercury into a power source also shattered the stability of his home, driving his people mad with vibrational noise. When they brought him into the light, it broke his mind. He fled to the deepest, darkest corner of Ignition City, a labyrinth of pipes and conduits that felt like home. The radiation in the Undercrawl is less dangerous to him than the open sky.",
+    "useForCharacterCreation": false
+  },
+  {
+    "keys": "Lugal , Lugal , Lugal's , \"Lugal , Lugal. , Lugal? , Lugal, , ",
+    "value": "{title: Lugal}\n; ( Person Lugal ( Gray ) ( Atomic Spy ) ( Logical Conclave ) ( Lugal's Scrap Heap ) ( The Expert Witness ) ( hollow-grey subtle-green-spots sickly-ivory ) ( oversized translucent skull ) ( large unblinking-eyes veined cranial-casing frail jaw ) ( tall frail ) ( overloaded electronics and dust ) ( simple high-collared seamless jumpsuit ) ( former intelligence agent now a paranoid recluse ) ( paranoid brilliant terrified ) His mind is a precision instrument being tortured by the illogical chaos of the city; his scrap heap is a fortress against that psychic noise. )",
+    "type": "character",
+    "title": "Lugal",
+    "description": "Auto-Cards will contextualize these memories:\n{updates: true, limit: 2750}\n- Lugal respected Jones because he was a quiet man who asked logical questions. In a city of shouting, Jones was a whisper of reason. When Jones presented him with the list of scavenged tech, Lugal's precise mind saw the illogical and dangerous pattern immediately. It was a crude attempt to replicate a Zetan stealth field generator, but it was flawed. He gave Jones the data crystal not just as proof, but as a warning: the device they were building wasn't a cloak, it was a bomb that could tear a hole in reality.\n- He was a spy once. He saw the galaxy's madness up close, and the constant, chaotic sensory input of organic life shattered his logical mind, a condition called Perceptual Dissonance. He fled to Ignition City to build a fortress of paranoia and be left alone. He can identify the purpose of the stolen military tech because, in his previous life, he was the one who wrote the schematics.",
+    "useForCharacterCreation": false
+  },
+  {
+    "keys": "Orkhan , Orkhan , Orkhan's , \"Orkhan , Orkhan. , Orkhan? , Orkhan, , ",
+    "value": "{title: Orkhan}\n; ( Person Orkhan ( Primal ) ( Pit-Fighter ) ( Unaligned ) ( The Siren's Call ) ( The Guardian ) ( molten-gold ash-white grey-hide ) ( thick tangled-mane ) ( broad feline-nose powerful jawline retractable obsidian-claws ) ( huge muscular ) ( clean linen and ozone ) ( impeccably tailored but strained suit jacket over a simple dark shirt ) ( aged former arena champion now Roshan's loyal guardian ) ( silent loyal observant ) The quiet, hushed tones of The Siren's Call are the only thing that soothes his shattered mind. He is a guardian priest, and the quiet is his goddess. )",
+    "type": "character",
+    "title": "Orkhan",
+    "description": "Auto-Cards will contextualize these memories:\n{updates: true, limit: 2750}\n- Orkhan does not process conversation, he processes vibration. The meeting between Jones and Sterling was a discordant, ugly tremor of betrayal and violence that still echoes in the room. He felt the cold, sharp vibrations from Sterling and the low, brutal hum from Gage. He felt Jones's quiet, fading resonance. He did not need to hear the words to know that a man had been judged. His presence alone was a promise to Roshan that the violence would not begin in her sanctuary.\n- He was a beast, captured on the hell-moon of Io and forced to fight for the entertainment of lesser creatures. The chaotic noise of civilization shattered his mind, which was built for the roar of a living planet. He was discarded when he got too old and broken. Roshan found him, a creature of immense power being driven mad by the city's noise, and offered him silence. He has never needed another reason to kill for her.",
+    "useForCharacterCreation": false
+  },
+  {
+    "keys": "Hemi , Hemi , Hemi's , \"Hemi , Hemi. , Hemi? , Hemi, , ",
+    "value": "{title: Hemi}\n; ( Person Hemi ( Gill-Man ) ( Technician ) ( Unaligned ) ( The Discovery Condenser Station ) ( The Witness ) ( solid-black translucent-fins pearly-white ) ( bioluminescent-tendrils ) ( large bulbous-eyes feathery external-gills webbed digits ) ( average slender ) ( algae and recycled water ) ( patched reclamation suit with a moisture-recirculating rebreather ) ( sole operator of the city's water condenser ) ( terrified pragmatic invisible ) He survives by not making waves, a creature out of his element, desperate to avoid the notice of the city's predators. )",
+    "type": "character",
+    "title": "Hemi",
+    "description": "Auto-Cards will contextualize these memories:\n{updates: true, limit: 2750}\n- Jones was just another Terran, but one who spoke quietly and didn't make threats. Gage Riley was the opposite. Hemi was terrified. He confessed to Jones that Riley had strong-armed him into diverting a massive quantity of purified water, designated 'hyper-coolant,' to a remote valve. He survives by being invisible, but Jones's quiet persistence made him feel seen, and Riley's open threats made him fear for his life. He created the water chit as the only proof he could offer.\n- A Nautilid from the pristine, sterile oceans of Europa. His people were decimated by systemic shock and biological incompatibility when brought off-world by Terran water-harvesting operations. He is a survivor, but one whose biology is in a constant state of rebellion against this dry, low-pressure world. He operates the condenser station because it is the wettest, most isolated place in the city, the only environment where he can maintain a fragile existence.",
+    "useForCharacterCreation": false
+  },
+  {
+    "keys": "Gorka , Gorka , Gorka's , \"Gorka , Gorka. , Gorka? , Gorka, , ",
+    "value": "{title: Gorka}\n; ( Person Gorka ( Avian ) ( Junkyard Brawler ) ( Corsair Flight ) ( Ignition City Streets ) ( The Eyewitness ) ( hawk-amber soot-grey weathered-tan ) ( sharp hawk-crest ) ( sharp avian-features piercing gaze beak-like nose broken wings bound to back ) ( short wiry ) ( dust and desperation ) ( long tattered duster modified to conceal his wings ) ( aged former pilot now an information hustler ) ( cynical pragmatic nihilistic ) Being 'Grounded' is the ultimate curse for an Avian; his broken wings are a constant, physical reminder of a freedom he has lost. )",
+    "type": "character",
+    "title": "Gorka",
+    "description": "Auto-Cards will contextualize these memories:\n{updates: true, limit: 2750}\n- Jones was just another ghost in a city full of them. Gorka, with his sharp eyes, noticed the old Ranger's movements in his final days: his visit to the Undercrawl, his careful approach to Lugal's Heap. He didn't know the specifics, but he saw a pattern. A quiet man moving with purpose. He sells information, and Jones was a developing story he hadn't found a buyer for yet. After the murder, those observations became a valuable, and dangerous, commodity.\n- He flew once. The atmospheric particulates from Terran fuel refineries on his homeworld of Titan created a permanent industrial smog that encumbered his wings during a critical dogfight. The crash broke his bones and his spirit. Too old to be a true Corsair pirate, too bitter to join the other Grounded in their weeping, he carved out his own niche. He became the city's welcome wagon and its first warning, a living monument to the fact that in Ignition City, even the sky is a lie.",
+    "useForCharacterCreation": false
+  },
+  {
+    "keys": "Servitor-4C , Servitor , 4C's , \"4C , 4C. , 4C? , 4C, , ",
+    "value": "{title: Servitor-4C}\n; ( Person Servitor-4C ( Automaton ) ( The Function ) ( The Function ) ( The Star Bar ) ( The Recorder ) ( amber-optic rusted-iron rusted-iron ) ( domed sensor-housing ) ( single glowing-optic smooth metallic-faceplate vocalizer grille ) ( average utilitarian ) ( synth-ale and sterile cleaner ) ( functional humanoid chassis with integrated multi-tool arm ) ( former service unit now a bartender ) ( logical non-contextual observant ) It is the perfect witness, a silent, unblinking eye whose memory banks hold the most complete and unbiased historical archive in the city. )",
+    "type": "character",
+    "title": "Servitor-4C",
+    "description": "Auto-Cards will contextualize these memories:\n{updates: true, limit: 2750}\n- It registered the final conversation between Jones and Cody Burns not as a tragedy, but as a data point. Its sensors recorded elevated vocal stress patterns and keywords ('Directorate,' 'fraud,' 'funeral pyre'). It has no opinion of Jones or Cody. It simply possesses a perfect, verbatim, non-contextual recording of a prophet speaking to a man who refused to be saved. The data is stored, awaiting a query.\n- Likely a service unit on a luxury liner, it was salvaged from a wreck and sold for scrap after its industrial hub in the Asteroid Belt was decommissioned. Brick Samson bought it for cheap. For decades, it has stood behind the bar, executing its Function: 'Serve and Record.' Its memory banks are the most complete and unbiased historical archive in the entire city, a perfect record of a thousand broken dreams.",
+    "useForCharacterCreation": false
+  },
+  {
+    "keys": "The Syllogism , Syllogism , Syllogism's , \"Syllogism , Syllogism. , Syllogism? , Syllogism, , ",
+    "value": "{title: The Syllogism}\n; ( Person The Syllogism ( Cerebran ) ( Mind Master ) ( Silent Exodus ) ( The Silent Room ) ( The Master Decryptor ) ( flickering-white cloudy-white pitted-iron ) ( six long undulating-gills ) ( massive temporal-lobes gesturing nerve-tendrils pulsing blood-vessels ) ( huge cube-frame ) ( ozone and leaking nutrient fluid ) ( dented and leaking life-support vat with a single critical warning light blinking ) ( ancient Cerebran strategist planning an escape from the system ) ( ruthless calculating desperate ) It is a god in a box, a mind that can unravel any secret, but is slowly being undone by the grubby problem of a dead battery. )",
+    "type": "character",
+    "title": "The Syllogism",
+    "description": "Auto-Cards will contextualize these memories:\n{updates: true, limit: 2750}\n- The Syllogism has no knowledge of Jones or his murder. It is entirely consumed with its own survival and its grand, desperate plan for escape. Jones is irrelevant. The encrypted ledger he found, however, is a problem it can solve. Its interest is not in the contents of the slate, but in the payment for its decryption. Its price is not greed, but necessity: a stable, military-grade power source to sustain its failing life-support system for the final calculations before its exodus.\n- It was a strategist, a mind of immense power that saw the slow death of its people by sensory pollution from Terran military installations on Pluto not as a tragedy, but as a failed equation. It came to Ignition City and found the one place in the system quiet enough to think: the lead-lined heart of a ship that drove its own crew mad. It has become the ultimate isolato, a mind that can unravel any secret, but is slowly being undone by its failing technology.",
+    "useForCharacterCreation": false
+  },
+  {
+    "keys": "Administrator Thorne , Thorne , Thorne's , \"Thorne , Thorne. , Thorne? , Thorne, , ",
+    "value": "{title: Administrator Thorne}\n; ( Person Thorne ( Terran ) ( Star-Baron ) ( Agent of the Directorate ) ( The Pioneer's Resettlement Bureau ) ( The Corrupt Bureaucrat ) ( brown thinning sallow ) ( greasy comb-over ) ( puffy bloodshot-eyes heavy jowls soft unlined-skin ) ( short stocky ) ( expensive brandy and fear-sweat ) ( expensive but ill-fitting and stained silk suit ) ( disgraced corporate executive serving a punitive term as city administrator ) ( apathetic lazy disinterested ) His posting isn't a job; it's a punishment for a past mistake, a gilded cage where his only ambition is to do as little as possible. )",
+    "type": "character",
+    "title": "Administrator Thorne",
+    "description": "Auto-Cards will contextualize these memories:\n{updates: true, limit: 2750}\n- To Thorne, Rocket Ranger Jones was just a name on a list of inconvenient pensioners. His murder is an administrative headache, a report he doesn't want to write. He willingly signed off on Marshal Brody's falsified report because it was the easiest option, requiring the least amount of work and preventing a larger, messier incident that might attract attention from his superiors. He is completely unaware of the Directorate's deeper conspiracy; he is simply a lazy, corrupt bureaucrat facilitating it through his own apathy.\n- He used to be a real power, a captain of industry with a fleet of haulers and a seat on the board. He made a mistake, backed the wrong politician, got caught with his hand in the wrong cookie jar. This posting isn't a job; it's a punishment. A gilded cage on a planet of rust. His only ambition is to do as little as possible so that one day, maybe, the Directorate will forget he exists and let him die somewhere with better air. His unrelated scams are just a way to pass the time.",
+    "useForCharacterCreation": false
+  },
+  {
+    "keys": "The Star Bar , The Star Bar , The Silvercup's , \"Silvercup , Silvercup. , Silvercup? , Silvercup, , ",
+    "value": "{title: The Star Bar}\n; ( Location The Star Bar ( Dive Bar ) ( Social Hub ) ( Pioneer's Remembrance ) ( Scrapyard Sector ) ( Key Witness Location ) ( aesthetics stained-wood dim-viewport stale-air ) ( Built inside the toppled hull of a classic bullet-shaped rocket ship ) ( The smell of spilled synth-ale and the silent whir of an automaton bartender ) ( Cramped and grimy with a single distorted viewport ) ( The derelict 'Silvercup' rocket ship ) ( A museum where old heroes pickle their regrets ) A literal and figurative tomb of past glories where the final plea of a friendship was made and rejected. )",
+    "type": "location",
+    "title": "The Star Bar",
+    "description": "Auto-Cards will contextualize these memories:\n{updates: true, limit: 2750}",
+    "useForCharacterCreation": false
+  },
+  {
+    "keys": "Marshal's Service Headquarters , Marshal's Service Headquarters , The Kennel's , \"Kennel , Kennel. , Kennel? , Kennel, , ",
+    "value": "{title: Marshal's Service Headquarters}\n; ( Location Marshal's Service Headquarters ( Precinct ) ( Law Enforcement ) ( Galactic Marshal's Service ) ( Administrative Sector ) ( The Compromised Law ) ( aesthetics scarred-steel harsh-strip-lighting recycled-air ) ( The old armory of a derelict cruiser with files in empty weapon racks ) ( The buzz of failing lights and the smell of stale sweat ) ( Cramped functional and grim a repurposed military interior ) ( The derelict 'SEF Protector' assault corvette ) ( The Kennel home of the city's toothless belligerent lawman ) The original brig still serves the same purpose because some things never change. )",
+    "type": "location",
+    "title": "Marshal's Service Headquarters",
+    "description": "Auto-Cards will contextualize these memories:\n{updates: true, limit: 2750}",
+    "useForCharacterCreation": false
+  },
+  {
+    "keys": "The Beagle Landing Field , The Beagle Landing Field , The Spaceport's , \"Spaceport , Spaceport. , Spaceport? , Spaceport, , ",
+    "value": "{title: The Beagle Landing Field}\n; ( Location The Beagle Landing Field ( Spaceport ) ( Transit ) ( Unaligned ) ( Port District ) ( Arrival & Departure ) ( aesthetics cracked-ferrocrete flickering-neon blowing-dust ) ( The tilted broken bridge of a derelict exploration vessel serves as the port's control tower ) ( The whine of wind and the groan of rusting metal ) ( A sprawling derelict field of landing pads under a sick red light ) ( The skeletal remains of the 'Beagle' explorer ship ) ( The city's welcome mat and only exit ) This is where Cody Burns can be found after he flees the Star Bar seeking an escape he can't afford. )",
+    "type": "location",
+    "title": "The Beagle Landing Field",
+    "description": "Auto-Cards will contextualize these memories:\n{updates: true, limit: 2750}",
+    "useForCharacterCreation": false
+  },
+  {
+    "keys": "The Pioneer's Vigil Hall , The Pioneer's Vigil Hall , The Sulaco's , \"Sulaco , Sulaco. , Sulaco? , Sulaco, , ",
+    "value": "{title: The Pioneer's Vigil Hall}\n; ( Location The Pioneer's Vigil Hall ( Faction HQ ) ( Political & Military Assembly ) ( The Pioneer's Vigil ) ( Military Sector ) ( The Antagonist's Lair ) ( aesthetics cold-steel faded-propaganda zealous-air ) ( Housed in the cavernous vehicle bay of a derelict troop transport ) ( The echo of Sterling's voice and the smell of ozone ) ( Vast cold and unnervingly tidy a military space repurposed as a temple ) ( The derelict 'Sulaco' troop transport ) ( The heart of the city's fanatical death cult ) The weapon racks are empty but the faded propaganda posters still preach their silent gospel. )",
+    "type": "location",
+    "title": "The Pioneer's Vigil Hall",
+    "description": "Auto-Cards will contextualize these memories:\n{updates: true, limit: 2750}",
+    "useForCharacterCreation": false
+  },
+  {
+    "keys": "The Siren's Call , The Siren's Call , The Lorelei's , \"Lorelei , Lorelei. , Lorelei? , Lorelei, , ",
+    "value": "{title: The Siren's Call}\n; ( Location The Siren's Call ( Brothel / Drug Den ) ( Information Brokerage ) ( Empathic Syndicate ) ( Scrapyard Sector ) ( Neutral Ground ) ( aesthetics bone-white-alloy narcotic-haze perfumed-air ) ( Housed in a grounded organic-looking alien warship with a hull like a great fish ) ( Hushed tones hypnotic music the smell of exotic perfume and narcotics ) ( A labyrinth of curving corridors and smoke-filled rooms ) ( The derelict Ascendant warship 'The Lorelei' ) ( The city's beating heart of secrets where information is the real currency ) The air is thick with a narcotic haze supplied by Itzel designed to make clients' emotions easier to read. )",
+    "type": "location",
+    "title": "The Siren's Call",
+    "description": "Auto-Cards will contextualize these memories:\n{updates: true, limit: 2750}",
+    "useForCharacterCreation": false
+  },
+  {
+    "keys": "The Pioneer's Resettlement Bureau , The Pioneer's Resettlement Bureau , The Empress's , \"Empress , Empress. , Empress? , Empress, , ",
+    "value": "{title: The Pioneer's Resettlement Bureau}\n; ( Location The Pioneer's Resettlement Bureau ( Government Office ) ( Administration ) ( Directorate ) ( Administrative Sector ) ( The Puppet Government ) ( aesthetics tarnished-brass cracked-marble recycled-air ) ( The command deck of a derelict luxury liner ) ( The buzz of failing lights and the cloying smell of cheap brandy ) ( Once opulent now decayed a symbol of failed ambition ) ( The grounded 'Empress of Mars' liner ) ( A court of decay run by the apathetic Administrator Thorne ) The gold-leaf name on the hull is barely readable under streaks of rust. )",
+    "type": "location",
+    "title": "The Pioneer's Resettlement Bureau",
+    "description": "Auto-Cards will contextualize these memories:\n{updates: true, limit: 2750}",
+    "useForCharacterCreation": false
+  },
+  {
+    "keys": "The Discovery Condenser Station , The Discovery Condenser Station , Discovery One's , \"Discovery , Discovery. , Discovery? , Discovery, , ",
+    "value": "{title: The Discovery Condenser Station}\n; ( Location The Discovery Condenser Station ( Moisture Farm ) ( Utility ) ( Unaligned ) ( Industrial Sector ) ( The Resource Trail ) ( aesthetics weeping-pipes humming-pumps algae-slicked-metal ) ( A sprawling complex of processors bolted onto the skeleton of a science vessel ) ( The constant hum of machinery and the drip of water ) ( A vital decaying miracle of jury-rigged engineering ) ( The derelict 'Discovery One' vessel ) ( The city's sole precarious source of water ) The Gill-Man Hemi is its terrified solitary operator. )",
+    "type": "location",
+    "title": "The Discovery Condenser Station",
+    "description": "Auto-Cards will contextualize these memories:\n{updates: true, limit: 2750}",
+    "useForCharacterCreation": false
+  },
+  {
+    "keys": "The Verdant Shelf , The Verdant Shelf , The Valley Forge's , \"Forge , Forge. , Forge? , Forge, , ",
+    "value": "{title: The Verdant Shelf}\n; ( Location The Verdant Shelf ( Biodome / Lab ) ( Black Market Drugs & Food ) ( Mycelium Survivors ) ( Scrapyard Sector ) ( The Armorer ) ( aesthetics living-vines bioluminescent-glow humid-air ) ( A massive humid biodome from a Verdian seed-ship its cracked glass patched with sheet metal ) ( The drip of water and the smell of wet earth rot and chemicals ) ( A fusion of a dying garden and a sophisticated drug lab ) ( The derelict 'Valley Forge' Verdian seed-ship ) ( The source of the city's most potent drugs ) The Greenie bio-chemist Itzel is always present. )",
+    "type": "location",
+    "title": "The Verdant Shelf",
+    "description": "Auto-Cards will contextualize these memories:\n{updates: true, limit: 2750}",
+    "useForCharacterCreation": false
+  },
+  {
+    "keys": "Eagle's Rest , Eagle's Rest , Pod 7's , \"Pod 7 , Pod 7. , Pod 7? , Pod 7, , ",
+    "value": "{title: Eagle's Rest}\n; ( Location Eagle's Rest ( Residential Pods ) ( Domicile ) ( Unaligned ) ( Residential Sector ) ( The Crime Scene ) ( aesthetics stained-plasteel corroded-catwalks recycled-air ) ( A vertical slum of stacked salvaged hexagonal transport pods ) ( The constant whistle of wind through the structure ) ( A precarious grim stack of stained white boxes ) ( Salvaged 'Eagle Transporter' pods ) ( Jones's home and the place where he was murdered ) A mute automaton janitor silently sweeps the catwalks seeing everything. )",
+    "type": "location",
+    "title": "Eagle's Rest",
+    "description": "Auto-Cards will contextualize these memories:\n{updates: true, limit: 2750}",
+    "useForCharacterCreation": false
+  },
+  {
+    "keys": "The Cold Hand , The Cold Hand , The Vorga's , \"Vorga , Vorga. , Vorga? , Vorga, , ",
+    "value": "{title: The Cold Hand}\n; ( Location The Cold Hand ( Gambling Den & Arena ) ( Black Market Finance ) ( Unaligned ) ( Underworld Sector ) ( The Financial Trail ) ( aesthetics shielded-steel low-light controlled-air ) ( Operates out of the magnetically shielded cargo hold of an infamous pirate vessel ) ( The soft riffle of sabacc cards and the clink of credits ) ( Quiet orderly and cold a professional environment for high-stakes games ) ( The derelict pirate vessel 'The Vorga' ) ( The only truly neutral ground for serious underworld business ) The Saurian Seti is always present watching. )",
+    "type": "location",
+    "title": "The Cold Hand",
+    "description": "Auto-Cards will contextualize these memories:\n{updates: true, limit: 2750}",
+    "useForCharacterCreation": false
+  },
+  {
+    "keys": "The Undercrawl , The Undercrawl , The Nostromo's , \"Nostromo , Nostromo. , Nostromo? , Nostromo, , ",
+    "value": "{title: The Undercrawl}\n; ( Location The Undercrawl ( Black Market Workshop ) ( Tech Scavenging ) ( Deep Hearth Collective ) ( Decommissioning Level ) ( The Technology Trail ) ( aesthetics exposed-power-conduits plasma-torch-glare ozone-laced-air ) ( A chaotic nest of parts inside the engineering section of a commercial towing vehicle ) ( The constant hum and crackle of live power conduits ) ( A cramped hazardous and claustrophobic labyrinth of machinery ) ( The derelict 'Nostromo' commercial towing vehicle ) ( The most reliable place to get illegal military-grade tech ) The Mole Man Pavel never leaves his shop here. )",
+    "type": "location",
+    "title": "The Undercrawl",
+    "description": "Auto-Cards will contextualize these memories:\n{updates: true, limit: 2750}",
+    "useForCharacterCreation": false
+  },
+  {
+    "keys": "Lugal's Scrap Heap , Lugal's Scrap Heap , C-57D's , \"Lugal , Lugal. , Lugal? , Lugal, , ",
+    "value": "{title: Lugal's Scrap Heap}\n; ( Location Lugal's Scrap Heap ( Fortified Lab ) ( Xenotechnology Analysis ) ( Logical Conclave ) ( Scrapyard Sector ) ( The Expert Witness ) ( aesthetics scavenged-steel sensor-light-sweep shielded-air ) ( The shielded cockpit of a classic Zetan flying saucer perched atop a mountain of junk ) ( The low hum of active defense systems ) ( A fortified obsessively organized cockpit surrounded by a chaotic maze of weaponized scrap ) ( The crashed Zetan 'Scout Ship C-57D' ) ( A fortress designed to keep the illogical universe out ) The paranoid Gray Lugal is its sole occupant. )",
+    "type": "location",
+    "title": "Lugal's Scrap Heap",
+    "description": "Auto-Cards will contextualize these memories:\n{updates: true, limit: 2750}",
+    "useForCharacterCreation": false
+  },
+  {
+    "keys": "The Silent Room , The Silent Room , Event Horizon's , \"Syllogism , Syllogism. , Syllogism? , Syllogism, , ",
+    "value": "{title: The Silent Room}\n; ( Location The Silent Room ( Shielded Sanctum ) ( Master Decryption ) ( Silent Exodus ) ( The Ghost Ship Sector ) ( The Final Key ) ( aesthetics lead-lined-walls static-glow absolute-silence ) ( The hollowed-out lead-lined gravity drive of a haunted exploration vessel ) ( A profound unnatural silence broken by the faint telepathic crackle of failing systems ) ( A single spherical shielded chamber a prison of perfect isolation ) ( The derelict 'Event Horizon' experimental starship ) ( A haunted taboo place that no one enters willingly ) The Cerebran The Syllogism is its sole occupant. )",
+    "type": "location",
+    "title": "The Silent Room",
+    "description": "Auto-Cards will contextualize these memories:\n{updates: true, limit: 2750}",
+    "useForCharacterCreation": false
+  },
+  {
+    "keys": "The Kakarin Hangar , The Kakarin Hangar , Rama's , \"Rama , Rama. , Rama? , Rama, , ",
+    "value": "{title: The Kakarin Hangar}\n; ( Location The Kakarin Hangar ( Secret Base ) ( Military Staging Ground ) ( The Pioneer's Vigil ) ( The Badlands ) ( Final Confrontation Site ) ( aesthetics smooth-alien-metal vast-darkness humming-power ) ( A cavernous hangar hidden inside a colossal half-buried cylindrical alien vessel ) ( The low hum of a powerful unknown energy source ) ( Immense and cavernous large enough for a fleet ) ( The derelict alien vessel 'Rama' ) ( A natural mesa to outsiders the secret heart of the Vigil's conspiracy ) This is the destination for the scavenged tech and hyper-coolant. )",
+    "type": "location",
+    "title": "The Kakarin Hangar",
+    "description": "Auto-Cards will contextualize these memories:\n{updates: true, limit: 2750}",
+    "useForCharacterCreation": false
+  },
+  {
+    "keys": "Ignition City Streets , Ignition City Streets , The Streets's , \"Gorka , Gorka. , Gorka? , Gorka, , ",
+    "value": "{title: Ignition City Streets}\n; ( Location Ignition City Streets ( Urban Environment ) ( Transit ) ( Unaligned ) ( City-Wide ) ( The Hunting Ground ) ( aesthetics pitted-steel flickering-strobe-light blowing-dust ) ( A chaotic maze of alleys and catwalks formed by narrow gaps between massive derelict starships ) ( The constant whistle of wind and the drip of leaking conduits ) ( A sprawling city-wide labyrinth of corroded metal and dust ) ( The negative space between cannibalized starships ) ( A place of random encounters muggings and whispered deals ) Gorka is the primary constant resident of this space. )",
+    "type": "location",
+    "title": "Ignition City Streets",
+    "description": "Auto-Cards will contextualize these memories:\n{updates: true, limit: 2750}",
+    "useForCharacterCreation": false
+  },
+  {
+    "keys": "Ignition City , Ignition City , the city's , \"city , city. , city? , city, , ",
+    "value": "{title: Ignition City}\n; ( Location Ignition City ( Quarantine Zone ) ( Exile Colony ) ( Directorate ) ( Mars ) ( The Powder Keg ) ( aesthetics rust-orange dust-red flickering-neon ) ( A sprawling graveyard of rusting cannibalized starships fused into a city ) ( The constant whine of wind through decaying metal hulls ) ( A dying city populated by the ghosts of a heroic age ) ( A former hero resettlement program ) ( The end of the line a trash can for inconvenient heroes ) The entire city is a tinderbox of competing factions and broken dreams. )",
+    "type": "location",
+    "title": "Ignition City",
+    "description": "Auto-Cards will contextualize these memories:\n{updates: true, limit: 2750}",
+    "useForCharacterCreation": false
+  },
+  {
+    "keys": "metal fragment , metal fragment , the fragment's , \"fragment , fragment. , fragment? , fragment, , ",
+    "value": "{title: Metal Fragment}\n; ( Item Metal Fragment ( Evidence ) ( small triangular polished metal ) ( sharp snapped-edges ) ( the tip of a star-shaped award ) ( linking a suspect to the crime scene ) This was found clutched in the hand of Rocket Ranger Jones. )",
+    "type": "item",
+    "title": "Metal Fragment",
+    "description": "Auto-Cards will contextualize these memories:\n{updates: true, limit: 2750}\n- This fragment was torn from Lance Sterling's 'Orion Cluster Star' medal during his final struggle with Jones.\n- It serves as direct physical evidence linking Sterling to Pod 7 at the time of the murder.",
+    "useForCharacterCreation": false
+  },
+  {
+    "keys": "wound analysis report , wound analysis report , the report's , \"report , report. , report? , report, , ",
+    "value": "{title: Wound Analysis Report}\n; ( Item Wound Analysis Report ( Evidence ) ( encrypted datapad ) ( contains a private forensic-file ) ( authored by Ur-Ea ) ( scientific proof of the murder weapon ) This report describes a deep cauterized perforating-wound with a perfect star-shaped pattern inconsistent with a blaster. )",
+    "type": "item",
+    "title": "Wound Analysis Report",
+    "description": "Auto-Cards will contextualize these memories:\n{updates: true, limit: 2750}\n- This private report by Ur-Ea directly contradicts Marshal Brody's official story of a 'bar brawl.'\n- The wound description is a perfect match for the effects of a Sun-Sword, proving Jones was executed with an advanced energy weapon.",
+    "useForCharacterCreation": false
+  },
+  {
+    "keys": "encrypted ledger , encrypted ledger , the ledger's , \"ledger , ledger. , ledger? , ledger, , ",
+    "value": "{title: Encrypted Ledger}\n; ( Item Encrypted Ledger ( Evidence ) ( featureless data-slate ) ( matte black military-grade material ) ( completely inert with no obvious seams or ports ) ( the conspiracy's financial records ) This requires a master decryptor to access. )",
+    "type": "item",
+    "title": "Encrypted Ledger",
+    "description": "Auto-Cards will contextualize these memories:\n{updates: true, limit: 2750}\n- This device contains the financial records for the Pioneer's Vigil.\n- It holds the final proof of the conspiracy, detailing a black budget payment from the Directorate.\n- Can only be decrypted by a mind like The Syllogism.",
+    "useForCharacterCreation": false
+  },
+  {
+    "keys": "decrypted ledger , decrypted ledger , the ledger's , \"ledger , ledger. , ledger? , ledger, , ",
+    "value": "{title: Decrypted Ledger}\n; ( Item Decrypted Ledger ( Evidence ) ( glowing data-slate ) ( soft glowing-screen displays financial records ) ( details a black budget payment ) ( the conspiracy's ultimate motive ) This explicitly names Lance Sterling as the recipient of a Directorate payment for 'Operation Phoenix Fire'. )",
+    "type": "item",
+    "title": "Decrypted Ledger",
+    "description": "Auto-Cards will contextualize these memories:\n{updates: true, limit: 2750}\n- This is the unlocked version of the encrypted dataslate.\n- The payment is to incite a violent uprising, creating a pretext for the complete 'sterilization' of Ignition City.",
+    "useForCharacterCreation": false
+  },
+  {
+    "keys": "broken power cell , broken power cell , the cell's , \"cell , cell. , cell? , cell, , ",
+    "value": "{title: Broken Power Cell}\n; ( Item Broken Power Cell ( Evidence ) ( military-grade power-cell ) ( heavy scorched casing is cracked ) ( faint etching of a mole's claw inside a cog ) ( first thread of the technical conspiracy ) This smells of ozone and links the Vigil to the black market tech trade. )",
+    "type": "item",
+    "title": "Broken Power Cell",
+    "description": "Auto-Cards will contextualize these memories:\n{updates: true, limit: 2750}\n- This is one of the components Jones was investigating before his death.\n- The etching is the maker's mark of the Mole Man, Pavel.\n- It connects the Vigil's muscle, Gage Riley, to his illicit dealings in the Undercrawl.",
+    "useForCharacterCreation": false
+  },
+  {
+    "keys": "Zetan data crystal , Zetan data crystal , the crystal's , \"crystal , crystal. , crystal? , crystal, , ",
+    "value": "{title: Zetan Data Crystal}\n; ( Item Zetan Data Crystal ( Evidence ) ( chipped data-crystal ) ( wrapped in flimsiplast ) ( hand-drawn diagram on wrapper showing interface with Terran power system ) ( proof of the conspiracy's technical goal ) The name 'Lugal' is scribbled beside the diagram. )",
+    "type": "item",
+    "title": "Zetan Data Crystal",
+    "description": "Auto-Cards will contextualize these memories:\n{updates: true, limit: 2750}\n- Given to Jones by the paranoid Gray, Lugal, as proof of his analysis.\n- The analysis shows the components Gage Riley is buying are for a crude, unstable Zetan stealth field generator.\n- Lugal believes the device is not a cloaking field, but a bomb that will tear a hole in reality.",
+    "useForCharacterCreation": false
+  },
+  {
+    "keys": "water chit , water chit , the chit's , \"chit , chit. , chit? , chit, , ",
+    "value": "{title: Water Ration Chit}\n; ( Item Water Ration Chit ( Evidence ) ( standard water-ration-chit ) ( from the Discovery Condenser Station ) ( shows a massive debit for 'HYPER-COOLANT' ) ( connects the conspiracy's resources to a location ) The debit is rerouted to a disused reclamation valve near the Rama wreck. )",
+    "type": "item",
+    "title": "Water Ration Chit",
+    "description": "Auto-Cards will contextualize these memories:\n{updates: true, limit: 2750}\n- Created by Hemi as a physical record of an illicit transaction he was forced into by Gage Riley.\n- It proves the conspiracy procured a key component for the Zetan device.\n- The destination valve points to the secret location of the Kakarin Hangar.",
+    "useForCharacterCreation": false
+  },
+  {
+    "keys": "Ascendant locket , Ascendant locket , the locket's , \"locket , locket. , locket? , locket, , ",
+    "value": "{title: Ascendant Locket}\n; ( Item Ascendant Locket ( Evidence ) ( elegant opalescent jewelry ) ( contains a microscopic data-chip ) ( a piece of Ascendant high-craft ) ( a final warning from an empathic witness ) This was given to Jones by Roshan after a failed peace talk she hosted. )",
+    "type": "item",
+    "title": "Ascendant Locket",
+    "description": "Auto-Cards will contextualize these memories:\n{updates: true, limit: 2750}\n- The data-chip contains Roshan's empathic reading of the meeting between Jones and Sterling.\n- The reading recorded Lance Sterling's cold, predatory intent and Gage Riley's unthinking violence.",
+    "useForCharacterCreation": false
+  },
+  {
+    "keys": "sabacc chip , sabacc chip , the chip's , \"chip , chip. , chip? , chip, , ",
+    "value": "{title: Sabacc Chip}\n; ( Item Sabacc Chip ( Evidence ) ( heavy black polished obsidian ) ( used for high-stakes games ) ( embossed with a skeletal three-fingered hand ) ( a link to underworld transactions ) This chip is used to buy into the most exclusive, secure back rooms at Seti's establishment. )",
+    "type": "item",
+    "title": "Sabacc Chip",
+    "description": "Auto-Cards will contextualize these memories:\n{updates: true, limit: 2750}\n- Jones acquired this to investigate the meetings between Gage Riley and Pavel.\n- It represents a tangible link to the financial hub of the Vigil's plot, The Cold Hand.",
+    "useForCharacterCreation": false
+  },
+  {
+    "keys": "military hypospray , military hypospray , the hypospray's , \"hypospray , hypospray. , hypospray? , hypospray, , ",
+    "value": "{title: Military Hypospray}\n; ( Item Military Hypospray ( Evidence ) ( military-style hypospray ) ( contains a viscous dark-green liquid ) ( a potent combat-stimulant ) ( proof of intent for violent confrontation ) This was synthesized for Jones by Itzel at The Verdant Shelf. )",
+    "type": "item",
+    "title": "Military Hypospray",
+    "description": "Auto-Cards will contextualize these memories:\n{updates: true, limit: 2750}\n- Jones procured this potent combat drug in his final days.\n- Its existence proves Jones knew he was heading into a violent confrontation and was preparing for a fight.",
+    "useForCharacterCreation": false
+  },
+  {
+    "keys": "Photograph of Jones and Brick , old photograph , the photo's , \"photo , photo. , photo? , photo, , ",
+    "value": "{title: Photograph of Jones and Brick}\n; ( Item Photograph ( Evidence ) ( old faded photograph ) ( depicts a younger Jones and Brick Samson ) ( back reads 'Brick - Remember the promise we made. Watch out for the Kid.' ) ( a record of a plea for help ) This is a symbol of Brick's guilt and cowardice for refusing to help his friend. )",
+    "type": "item",
+    "title": "Photograph of Jones and Brick",
+    "description": "Auto-Cards will contextualize these memories:\n{updates: true, limit: 2750}\n- A memento of a long-dead friendship and a shared past.\n- The inscription refers to their promise to look after Cody \"Kid Comet\" Burns.\n- Jones showed this to Brick as a final, desperate plea for help, which Brick refused out of fear.",
+    "useForCharacterCreation": false
+  },
+  {
+    "keys": "The Pioneer's Vigil , The Pioneer's Vigil , the Vigil's , \"Vigil , Vigil. , Vigil? , Vigil, , ",
+    "value": "{title: The Pioneer's Vigil}\n; ( Faction The Pioneer's Vigil ( Fanatical Political-Movement ) ( The Pioneer's Vigil Hall ) ( Lance Sterling ) ( Exiled Terran Heroes ) ( Preaches a gospel of glorious death and renewal through fire ) ( Fractured Orion-Cluster-Star ) ( A dangerous and influential death-cult ) They believe a heroic violent death is preferable to a slow fade into obscurity. )",
+    "type": "faction",
+    "title": "The Pioneer's Vigil",
+    "description": "Auto-Cards will contextualize these memories:\n{updates: true, limit: 2750}\n- Founded by Lance Sterling as an alternative to the quiet decay of Ignition City.\n- Actively recruiting disillusioned former heroes for a final, glorious war against the Directorate.",
+    "useForCharacterCreation": false
+  },
+  {
+    "keys": "The Pioneer's Remembrance , The Pioneer's Remembrance , the Remembrance's , \"Remembrance , Remembrance. , Remembrance? , Remembrance, , ",
+    "value": "{title: The Pioneer's Remembrance}\n; ( Faction The Pioneer's Remembrance ( Informal Association ) ( The Star Bar ) ( Brick Samson ) ( Exiled Terran Heroes ) ( Prefers to live quietly with their memories and regrets ) ( Faded Squadron Patches ) ( A loose-knit group of aging veterans ) Their inaction and acceptance of their fate is seen as a betrayal by the Vigil. )",
+    "type": "faction",
+    "title": "The Pioneer's Remembrance",
+    "description": "Auto-Cards will contextualize these memories:\n{updates: true, limit: 2750}\n- A loose affiliation of heroes who have accepted their exile.\n- They represent the quiet, nostalgic past that Lance Sterling and the Vigil violently reject.",
+    "useForCharacterCreation": false
+  },
+  {
+    "keys": "The Directorate , The Directorate , the Directorate's , \"Directorate , Directorate. , Directorate? , Directorate, , ",
+    "value": "{title: The Directorate}\n; ( Faction The Directorate ( Off-World Government ) ( The Pioneer's Resettlement Bureau ) ( Administrator Thorne ) ( Terran Bureaucrats ) ( Maintain the status quo at all costs ) ( Silver Rocket Emblem ) ( The nominal apathetic authority in the city ) Its sole interest is keeping Ignition City quiet and preventing its problems from becoming their own. )",
+    "type": "faction",
+    "title": "The Directorate",
+    "description": "Auto-Cards will contextualize these memories:\n{updates: true, limit: 2750}\n- The distant, uncaring power that created Ignition City as a dumping ground for its inconvenient heroes.\n- Its local representative, Thorne, is corrupt and disinterested, unknowingly facilitating a deeper, deadlier plot by his own superiors.",
+    "useForCharacterCreation": false
+  },
+  {
+    "keys": "Valles Marineris Compact , Valles Marineris Compact , the Compact's , \"Compact , Compact. , Compact? , Compact, , ",
+    "value": "{title: Valles Marineris Compact}\n; ( Faction Valles Marineris Compact ( Martian Society ) ( Karthan's Hold Mars ) ( None Present ) ( Karthan Warriors ) ( A culture built on honor and duty ) ( Four-Armed Spiral ) ( A minor but honorable presence in Ignition City ) Their values of truth and martial prowess stand in stark contrast to the corruption of the Terran factions. )",
+    "type": "faction",
+    "title": "Valles Marineris Compact",
+    "description": "Auto-Cards will contextualize these memories:\n{updates: true, limit: 2750}\n- A Martian cultural and political entity with a reputation for rigid honor.\n- Deputy Kaelen's strict moral code is a direct result of his Compact upbringing.",
+    "useForCharacterCreation": false
+  },
+  {
+    "keys": "Empathic Syndicate , Empathic Syndicate , the Syndicate's , \"Syndicate , Syndicate. , Syndicate? , Syndicate, , ",
+    "value": "{title: Empathic Syndicate}\n; ( Faction Empathic Syndicate ( Information Network ) ( The Siren's Call ) ( Roshan ) ( Ascendant Empaths ) ( Uses empathy to read intent and gather secrets ) ( Opalescent Eye ) ( A neutral but influential power ) They trade in the currency of information, making them the most informed faction in the city. )",
+    "type": "faction",
+    "title": "Empathic Syndicate",
+    "description": "Auto-Cards will contextualize these memories:\n{updates: true, limit: 2750}\n- A criminal organization built on the Ascendants' natural empathic abilities.\n- Roshan uses her position to maintain a delicate balance of power, ensuring no one faction becomes too dominant.",
+    "useForCharacterCreation": false
+  },
+  {
+    "keys": "Sun-Sword , Sun-Sword , the Sword's , \"Sword , Sword. , Sword? , Sword, , ",
+    "value": "{title: Sun-Sword}\n; ( Item Sun-Sword ( Melee Energy-Weapon ) ( inert silver hilt ) ( produces a hissing white blade when active ) ( leaves a unique star-shaped cauterized wound ) ( the signature weapon of a Star Knight ) This is the murder weapon used to kill Rocket Ranger Jones. )",
+    "type": "item",
+    "title": "Sun-Sword",
+    "description": "Auto-Cards will contextualize these memories:\n{updates: true, limit: 2750}\n- A rare and powerful energy blade wielded exclusively by Lance Sterling.\n- The unique, star-shaped wound it creates is a perfect match for the forensic analysis of Jones's fatal injury.",
+    "useForCharacterCreation": false
+  },
+  {
+    "keys": "The Chromed Circle , The Chromed Circle , the Circle's , \"Circle , Circle. , Circle? , Circle, , ",
+    "value": "{title: The Chromed Circle}\n; ( Lore The Chromed Circle ( Blood Sport ) ( Seti ) ( Provide entertainment and settle disputes ) ( High-stakes lethal combat ) ( A brutal but respected underworld institution ) It is a test of character for those who wish to do serious business with Seti. )",
+    "type": "lore",
+    "title": "The Chromed Circle",
+    "description": "Auto-Cards will contextualize these memories:\n{updates: true, limit: 2750}\n- The primary source of entertainment and dispute resolution at Seti's establishment, The Cold Hand.\n- It is a brutal, unforgiving place where a person's reputation can be forged in blood or ended permanently.",
+    "useForCharacterCreation": false
+  },
+  {
+    "keys": "The Hero Resettlement Program , The Hero Resettlement Program , the Program's , \"Program , Program. , Program? , Program, , ",
+    "value": "{title: The Hero Resettlement Program}\n; ( Lore The Hero Resettlement Program ( Government Policy ) ( The Directorate ) ( Exile inconvenient and expensive heroes ) ( A city of forgotten legends ) ( A gilded cage disguised as an honor ) The city and its inhabitants are the bitter forgotten result of this cynical policy. )",
+    "type": "lore",
+    "title": "The Hero Resettlement Program",
+    "description": "Auto-Cards will contextualize these memories:\n{updates: true, limit: 2750}\n- The Directorate's political solution for heroes who were too expensive or famous to simply discard after the wars.\n- It was presented as an honor, but was in reality a sentence of exile to a purpose-built slum on Mars.",
+    "useForCharacterCreation": false
+  }
+]
