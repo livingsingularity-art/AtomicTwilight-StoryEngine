@@ -3,8 +3,9 @@
 // =============================================================================
 
 const modifier = (text) => {
+    masterStartup();
     if (!state.engineInitialized) { return { text: "" }; }
-    
+
     let anOverride = null;
 
     const playerAction = state.encounterState.playerAction;

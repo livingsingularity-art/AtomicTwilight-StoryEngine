@@ -3,10 +3,9 @@
 // =============================================================================
 
 const modifier = (text) => {
+    masterStartup();
     if (!state.engineInitialized) { return { text: "" }; }
     if (info.actionCount === 0) { return { text: text.trim().length === 0 ? " " : text }; }
-
-    masterStartup();
     delete state.encounterState.playerAction;
     delete state.encounterState.presentedClue;
     state.encounterState.actionTaken = false;
