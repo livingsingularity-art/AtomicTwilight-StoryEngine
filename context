@@ -27,6 +27,13 @@ const modifier = (text) => {
     else if (playerAction === 'examine_clue' && presentedClue) {
         message('You take a closer look at the ' + presentedClue + '.');
         anOverride = { focus: "Forensic-Examination", directive: 'Describe the player closely examining the \'' + presentedClue + '\'. Its specific, observable appearance is: \'' + state.GAME_DATA.CLUE_DETAILS[presentedClue] + '\'' };
+
+        const systemPrompt = `### REQUIRED NARRATIVE OUTPUT:
+Action: Player examines the ${presentedClue}
+Description: ${state.GAME_DATA.CLUE_DETAILS[presentedClue]}
+
+# CRITICAL: Describe the clue's appearance EXACTLY as written above.`;
+        state.memory.frontMemory = systemPrompt;
         state.nuanceEngine.shockEventFlag = true;
     }
     else if (playerAction === 'show_clue' && presentedClue) {
@@ -36,11 +43,27 @@ const modifier = (text) => {
         enterEncounter("Ignition City Streets (Vigil Patrol)");
         const revealGage = state.GAME_DATA.SECRET_DATABASE["Ignition City Streets (Vigil Patrol)"][0].tiers[0];
         anOverride = { focus: revealGage.focus, style: revealGage.style, directive: 'Gage Riley performs the action: "' + revealGage.action + '". Then he says: "' + revealGage.dialogue + '"' };
+
+        const systemPrompt = `### REQUIRED NARRATIVE OUTPUT:
+Character: Gage Riley
+Action: ${revealGage.action}
+Dialogue: "${revealGage.dialogue}"
+
+# CRITICAL: The above action and dialogue must appear EXACTLY as written in the next output.`;
+        state.memory.frontMemory = systemPrompt;
     }
     else if (playerAction === 'random_encounter_kaelen') {
         enterEncounter("Ignition City Streets (Kaelen Encounter)");
         const revealKaelen = state.GAME_DATA.SECRET_DATABASE["Ignition City Streets (Kaelen Encounter)"][0].tiers[0];
         anOverride = { focus: revealKaelen.focus, style: revealKaelen.style, directive: 'Deputy Kaelen performs the action: "' + revealKaelen.action + '". Then he says: "' + revealKaelen.dialogue + '"' };
+
+        const systemPrompt = `### REQUIRED NARRATIVE OUTPUT:
+Character: Deputy Kaelen
+Action: ${revealKaelen.action}
+Dialogue: "${revealKaelen.dialogue}"
+
+# CRITICAL: The above action and dialogue must appear EXACTLY as written in the next output.`;
+        state.memory.frontMemory = systemPrompt;
     }
 
     if (presentedClue) {
@@ -72,6 +95,15 @@ const modifier = (text) => {
 
             if (chosenTier) {
                 anOverride = { focus: chosenTier.focus, style: chosenTier.style, directive: 'In response to the \'' + presentedClue + '\', ' + targetCharacter + ' performs the action: "' + chosenTier.action + '". Then they say: "' + chosenTier.dialogue + '"' };
+
+                const systemPrompt = `### REQUIRED NARRATIVE OUTPUT:
+In response to: ${presentedClue}
+Character: ${targetCharacter}
+Action: ${chosenTier.action}
+Dialogue: "${chosenTier.dialogue}"
+
+# CRITICAL: The above action and dialogue must appear EXACTLY as written in the next output.`;
+                state.memory.frontMemory = systemPrompt;
             }
         }
     }

@@ -74,6 +74,11 @@ const modifier = (text) => {
     state.nuanceEngine.turnCount = (state.nuanceEngine.turnCount || 0) + 1;
     updateCoreState();
 
+    // Clear frontMemory after AI generation completes
+    if (state.memory.frontMemory) {
+        state.memory.frontMemory = "";
+    }
+
     return { text: modifiedText };
 };
 
