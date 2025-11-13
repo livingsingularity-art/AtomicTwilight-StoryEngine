@@ -1,6 +1,11 @@
 // =============================================================================
-// LIBRARY SCRIPT (DEFINITIVE BLUEPRINT v19.0 - ENHANCED ESCALATION SYSTEM)
+// LIBRARY SCRIPT (DEFINITIVE BLUEPRINT v20.0 - ENHANCED ESCALATION SYSTEM)
 // =============================================================================
+// CHANGELOG v20.0:
+// - Added state.playerAuthorsNote for player-customizable authors note content
+// - playerAuthorsNote appends after story arc info, before preservedUserNote
+// - Players can set via: state.playerAuthorsNote = "Your custom note here"
+//
 // CHANGELOG v19.0:
 // - Added extractUserAuthorsNote() to preserve user's custom authors notes
 // - Added ESCALATION_CONFIG with 15+ configurable parameters with min/max limits
@@ -260,8 +265,9 @@ function assembleAuthorsNote(inputOverride) {
         .replace('{{style}}', finalStyle)
         .replace('{{directive}}', finalDirective)
         .replace('{{debug}}', debugVars);
+    var playerNoteSection = state.playerAuthorsNote ? ' ' + state.playerAuthorsNote : '';
     var userNoteSection = state.preservedUserNote ? ' --- ' + state.preservedUserNote : '';
-    state.memory.authorsNote = (finalAN + userNoteSection).trim();
+    state.memory.authorsNote = (finalAN + playerNoteSection + userNoteSection).trim();
 }
 
 function updateCoreState(inputOverride) {
@@ -367,6 +373,7 @@ function ensureStateShape() {
     state.vigilAlertSystem.cooldownTurnsLeft = state.vigilAlertSystem.cooldownTurnsLeft || 0;
     state.encounterState = state.encounterState || {};
     state.playerEffects = state.playerEffects || {};
+    state.playerAuthorsNote = state.playerAuthorsNote || "";
     state.playerDossier = state.playerDossier || { clues: {} };
     state.nuanceEngine = state.nuanceEngine || {};
     state.randomEncounter = state.randomEncounter || {};
@@ -695,6 +702,7 @@ function initializeEngine() {
         activeTrust: 0, activeFear: 0
     };
     state.playerEffects = { combatDrugTurnsLeft: 0, hyposprayUsed: false };
+    state.playerAuthorsNote = state.playerAuthorsNote || ""; // Player-customizable authors note section
     state.playerDossier = {
         clues: {
             "Photograph of Jones and Brick":{status:'Examined'}, "Broken Power Cell":{status:'Examined'}, "Zetan Data Crystal":{status:'Examined'},
