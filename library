@@ -15,6 +15,10 @@
 // - Added SECRET_DATABASE caching for performance
 // - Added code regions for better organization
 // - Optimized assembleAuthorsNote with state hashing
+// - ALL DEBUG FEATURES ENABLED BY DEFAULT (enabled: true, verbose: true)
+// - ALL LOGGER CATEGORIES ACTIVE (AUTHOR: true, MEMORY: true)
+// - Auto state inspection on turns: [1, 5, 10, 20, 50, 100]
+// - state.DEBUG_ENABLED automatically set to true on initialization
 //
 // CHANGELOG v20.0:
 // - Added state.playerAuthorsNote for player-customizable authors note content
@@ -31,9 +35,10 @@
 // #region CONFIGURATION
 
 // Debug Configuration - Master control for all debugging features
+// ALL FEATURES ENABLED - Full debug mode active
 const DEBUG_CONFIG = {
-    enabled: false,  // Master switch - set state.DEBUG_ENABLED = true to enable
-    verbose: false,  // Extra detailed logging
+    enabled: true,   // Master switch - ALL DEBUGGING ACTIVE
+    verbose: true,   // Extra detailed logging - ENABLED
 
     loggers: {
         INIT: true,      // Initialization logging
@@ -42,22 +47,22 @@ const DEBUG_CONFIG = {
         COOLDOWN: true,  // Cooldown system
         ENCOUNTER: true, // Encounter management
         SECRET: true,    // SECRET_DATABASE reveals
-        AUTHOR: false,   // Authors note assembly (verbose)
+        AUTHOR: true,    // Authors note assembly (verbose) - ENABLED
         CONFIG: true,    // Configuration access
         GAMBIT: true,    // Social gambits
-        MEMORY: false,   // Memory operations (verbose)
+        MEMORY: true,    // Memory operations (verbose) - ENABLED
         PERF: true       // Performance metrics
     },
 
     metrics: {
         enabled: true,        // Performance metrics
-        logInterval: 10,      // Log metrics every N turns
+        logInterval: 10,      // Log metrics every 10 turns
         trackFunctions: true  // Track function call counts
     },
 
     stateInspection: {
         enabled: true,
-        showOnTurn: [],  // e.g., [1, 5, 10, 20] - show state on these turns
+        showOnTurn: [1, 5, 10, 20, 50, 100],  // Auto-inspect on these turns
         trackSize: true  // Track state object sizes
     }
 };
@@ -673,6 +678,11 @@ function ensureStateShape() {
     state.nuanceEngine = state.nuanceEngine || {};
     state.randomEncounter = state.randomEncounter || {};
     state.shared.messageQueue = state.shared.messageQueue || [];
+
+    // ALL DEBUG FEATURES ENABLED - Set runtime debug flag
+    if (state.DEBUG_ENABLED === undefined) {
+        state.DEBUG_ENABLED = true;
+    }
 }
 
 function masterStartup() {
