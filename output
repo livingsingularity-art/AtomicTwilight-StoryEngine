@@ -1,8 +1,9 @@
 // =============================================================================
-// OUTPUT SCRIPT (DEFINITIVE BLUEPRINT v18.0 - GUIDEBOOK COMPLIANT)
+// OUTPUT SCRIPT (DEFINITIVE BLUEPRINT v21.0 - DEBUG & OPTIMIZATION UPDATE)
 // =============================================================================
 
 const modifier = (text) => {
+    masterStartup();
     if (!state.engineInitialized) { return { text }; }
     if (info.actionCount === 0) { return { text: text.trim().length === 0 ? " " : text }; }
 
@@ -42,29 +43,45 @@ const modifier = (text) => {
     const lowerText = text.toLowerCase();
     let suspicionChange = 0;
 
+    const conflictWeight = getConfig('conflictWordWeight');
+    const calmingWeight = getConfig('calmingWordWeight');
+
     for (const word in conflictWords) {
         if (lowerText.includes(word)) {
-            suspicionChange += conflictWords[word];
+            suspicionChange += conflictWords[word] * conflictWeight;
         }
     }
     for (const word in calmingWords) {
         if (lowerText.includes(word)) {
-            suspicionChange += calmingWords[word];
+            suspicionChange += calmingWords[word] * calmingWeight;
         }
     }
-   
+
+    suspicionChange = Math.round(suspicionChange);
+
     if (suspicionChange !== 0) {
         state.globalScores.suspicion = clampScore(state.globalScores.suspicion + suspicionChange, 'suspicion');
+        processHeatAccumulator(suspicionChange);
+    } else {
+        processHeatAccumulator(0);
     }
 
-    if (suspicionChange >= 5) {
+    const shockThreshold = getConfig('shockEventThreshold');
+    if (Math.abs(suspicionChange) >= shockThreshold) {
         state.nuanceEngine.shockEventFlag = true;
     }
    
     state.nuanceEngine.turnCount = (state.nuanceEngine.turnCount || 0) + 1;
     updateCoreState();
 
+    // Clear frontMemory after AI generation completes
+    if (state.memory.frontMemory) {
+        state.memory.frontMemory = "";
+    }
+
     return { text: modifiedText };
 };
 
 modifier(text);
+
+void 0;

@@ -1,12 +1,11 @@
 // =============================================================================
-// INPUT SCRIPT (DEFINITIVE BLUEPRINT v18.0 - GUIDEBOOK COMPLIANT)
+// INPUT SCRIPT (DEFINITIVE BLUEPRINT v21.0 - DEBUG & OPTIMIZATION UPDATE)
 // =============================================================================
 
 const modifier = (text) => {
+    masterStartup();
     if (!state.engineInitialized) { return { text: "" }; }
     if (info.actionCount === 0) { return { text: text.trim().length === 0 ? " " : text }; }
-
-    masterStartup();
     delete state.encounterState.playerAction;
     delete state.encounterState.presentedClue;
     state.encounterState.actionTaken = false;
@@ -25,7 +24,71 @@ const modifier = (text) => {
     let verb;
     const intentVerbs = state.GAME_DATA.INTENT_VERBS;
 
-    if ((verb = findVerb(intentVerbs.assess))) {
+    // #region DEBUG_COMMANDS
+    // Debug command system - only active if DEBUG enabled
+    if ((DEBUG_CONFIG.enabled || state.DEBUG_ENABLED) && lowerText.startsWith('@debug')) {
+        state.encounterState.actionTaken = true;
+        const debugCmd = lowerText.substring(7).trim();
+
+        if (debugCmd === 'state' || debugCmd === '') {
+            message('=== Current State ===');
+            message('Turn: ' + (state.nuanceEngine.turnCount || 0));
+            message('Vigil Alert: ' + state.vigilAlertSystem.vigilAlert + '/12');
+            message('Heat: ' + state.vigilAlertSystem.heat.toFixed(2));
+            message('Suspicion: ' + state.globalScores.suspicion);
+            message('Reputation: ' + state.globalScores.reputation);
+            message('Cooldown: ' + (state.vigilAlertSystem.cooldownMode ? 'ACTIVE (' + state.vigilAlertSystem.cooldownTurnsLeft + ' turns)' : 'Inactive'));
+        }
+        else if (debugCmd === 'metrics') {
+            PerformanceMonitor.report();
+        }
+        else if (debugCmd === 'size') {
+            reportStateSize();
+        }
+        else if (debugCmd === 'config') {
+            message('=== Config Values ===');
+            for (const key in state.GAME_DATA.ESCALATION_CONFIG) {
+                const cfg = state.GAME_DATA.ESCALATION_CONFIG[key];
+                message(key + ': ' + cfg.value + ' [' + cfg.min + '-' + cfg.max + ']');
+            }
+        }
+        else if (debugCmd.startsWith('set ')) {
+            const parts = debugCmd.substring(4).split(' ');
+            if (parts.length === 2) {
+                const varName = parts[0];
+                const value = parts[1] === 'true' ? true : parts[1] === 'false' ? false : parseFloat(parts[1]);
+                state[varName] = value;
+                message('Set state.' + varName + ' = ' + value);
+            }
+        }
+        else if (debugCmd.startsWith('config set ')) {
+            const parts = debugCmd.substring(11).split(' ');
+            if (parts.length === 2) {
+                const configKey = parts[0];
+                const newValue = parseFloat(parts[1]);
+                if (state.GAME_DATA.ESCALATION_CONFIG[configKey]) {
+                    const cfg = state.GAME_DATA.ESCALATION_CONFIG[configKey];
+                    cfg.value = Math.max(cfg.min, Math.min(cfg.max, newValue));
+                    message('Set ' + configKey + ' = ' + cfg.value);
+                }
+            }
+        }
+        else if (debugCmd === 'inspect') {
+            state.INSPECT_THIS_TURN = true;
+        }
+        else {
+            message('Debug Commands:');
+            message('@debug state - Show current state');
+            message('@debug metrics - Performance report');
+            message('@debug size - Memory usage');
+            message('@debug config - Show config values');
+            message('@debug set <var> <value> - Set state variable');
+            message('@debug config set <key> <value> - Set config value');
+            message('@debug inspect - Inspect state this turn');
+        }
+    }
+    // #endregion
+    else if ((verb = findVerb(intentVerbs.assess))) {
         state.encounterState.actionTaken = true;
         message('Your Thoughts:\nVigil Alert: ' + state.vigilAlertSystem.vigilAlert + '/12\nStreet Reputation: ' + state.globalScores.reputation + '\nCurrent Suspicion: ' + state.globalScores.suspicion);
     }
@@ -91,35 +154,58 @@ const modifier = (text) => {
         }
         
         const rand = Math.random() * 100;
-        const gageChance = state.vigilAlertSystem.vigilAlert * 5;
+        const gageMultiplier = getConfig('gageEncounterMultiplier');
+        const gageChance = state.vigilAlertSystem.vigilAlert * gageMultiplier;
+        const gageCooldown = getConfig('gageCooldownTurns');
+        const kaelenThreshold = getConfig('randomEncounterTurnThreshold');
+        const kaelenChance = getConfig('randomEncounterChance');
+
         if (state.randomEncounter.gageCooldown > 0) { state.randomEncounter.gageCooldown--; }
 
         if (state.randomEncounter.gageCooldown === 0 && rand < gageChance) {
             state.encounterState.actionTaken = true;
             state.encounterState.playerAction = 'random_encounter_gage';
-        } else if (!state.randomEncounter.kaelenTriggered && state.nuanceEngine.turnCount > 15 && state.globalScores.reputation >= 0 && rand < 25) {
+            state.randomEncounter.gageCooldown = gageCooldown;
+        } else if (!state.randomEncounter.kaelenTriggered && state.nuanceEngine.turnCount > kaelenThreshold && state.globalScores.reputation >= 0 && rand < kaelenChance) {
             state.encounterState.actionTaken = true;
             state.encounterState.playerAction = 'random_encounter_kaelen';
             state.randomEncounter.kaelenTriggered = true;
         }
 
         let suspicion = state.globalScores.suspicion;
-        let vigilAlert = state.vigilAlertSystem.vigilAlert;
-        
-        suspicion = clampScore(suspicion + 1, 'suspicion');
 
-        if (suspicion >= state.GAME_DATA.SCORE_CONFIG.suspicion.max) {
-            state.globalScores.suspicion = 0;
-            state.vigilAlertSystem.vigilAlert = clampScore(vigilAlert + 1, 'vigilAlert');
-            message("You feel a new set of eyes on you. The Vigil is getting nervous.");
-        } else {
+        const suspicionPerTurn = getConfig('suspicionPerTurn');
+
+        if (!state.vigilAlertSystem.cooldownMode) {
+            suspicion = clampScore(suspicion + suspicionPerTurn, 'suspicion');
             state.globalScores.suspicion = suspicion;
         }
     }
-   
+
+    processCooldownSystem();
+
+    // Record turn analytics
+    var turn = state.nuanceEngine.turnCount || 0;
+    TurnAnalytics.record(turn, {
+        vigilAlert: state.vigilAlertSystem.vigilAlert,
+        heat: state.vigilAlertSystem.heat,
+        suspicion: state.globalScores.suspicion,
+        reputation: state.globalScores.reputation
+    });
+
+    // Periodic performance report
+    if (DEBUG_CONFIG.metrics.enabled && turn > 0 && turn % DEBUG_CONFIG.metrics.logInterval === 0) {
+        PerformanceMonitor.report();
+    }
+
+    // State inspection
+    inspectState();
+
     updateCoreState();
 
     return { text };
 };
 
 modifier(text);
+
+void 0;

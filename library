@@ -1,13 +1,124 @@
 // =============================================================================
-// LIBRARY SCRIPT (DEFINITIVE BLUEPRINT v11.0 - PATH CORRECTION)
+// LIBRARY SCRIPT (DEFINITIVE BLUEPRINT v21.0 - DEBUG & OPTIMIZATION UPDATE)
+// =============================================================================
+// CHANGELOG v21.0:
+// - CRITICAL: Added void 0 terminator for consistent behavior
+// - CRITICAL: Fixed logging to use built-in log() instead of console.log wrapper
+// - Added comprehensive DEBUG_CONFIG system with toggleable logging categories
+// - Added PerformanceMonitor for function timing and metrics
+// - Added debugLog() conditional logger
+// - Added reportStateSize() memory tracker
+// - Added inspectState() turn-based state inspection
+// - Added TurnAnalytics for trend analysis
+// - Added error handling (try-catch) to all critical functions
+// - Added array size bounds to prevent memory leaks
+// - Added SECRET_DATABASE caching for performance
+// - Added code regions for better organization
+// - Optimized assembleAuthorsNote with state hashing
+// - ALL DEBUG FEATURES ENABLED BY DEFAULT (enabled: true, verbose: true)
+// - ALL LOGGER CATEGORIES ACTIVE (AUTHOR: true, MEMORY: true)
+// - Auto state inspection on turns: [1, 5, 10, 20, 50, 100]
+// - state.DEBUG_ENABLED automatically set to true on initialization
+//
+// CHANGELOG v20.0:
+// - Added state.playerAuthorsNote for player-customizable authors note content
+// - playerAuthorsNote appends after story arc info, before preservedUserNote
+//
+// CHANGELOG v19.0:
+// - Added extractUserAuthorsNote() to preserve user's custom authors notes
+// - Added ESCALATION_CONFIG with 15+ configurable parameters with min/max limits
+// - Added getConfig() helper function for validated config access
+// - Added heat accumulator system for probabilistic vigilAlert increases
+// - Added cooldown system for vigilAlert de-escalation after peaks
 // =============================================================================
 
-// --- GLOBALLY DECLARED CORE FUNCTIONS ---
+// #region CONFIGURATION
 
-function log(source, message) {
-    try {
-        console.log('[IGNITION-SYS / ' + source.toString().toUpperCase() + '] ' + message);
-    } catch (e) {}
+// Debug Configuration - Master control for all debugging features
+// ALL FEATURES ENABLED - Full debug mode active
+const DEBUG_CONFIG = {
+    enabled: true,   // Master switch - ALL DEBUGGING ACTIVE
+    verbose: true,   // Extra detailed logging - ENABLED
+
+    loggers: {
+        INIT: true,      // Initialization logging
+        STATE: true,     // State changes
+        HEAT: true,      // Heat accumulator
+        COOLDOWN: true,  // Cooldown system
+        ENCOUNTER: true, // Encounter management
+        SECRET: true,    // SECRET_DATABASE reveals
+        AUTHOR: true,    // Authors note assembly (verbose) - ENABLED
+        CONFIG: true,    // Configuration access
+        GAMBIT: true,    // Social gambits
+        MEMORY: true,    // Memory operations (verbose) - ENABLED
+        PERF: true       // Performance metrics
+    },
+
+    metrics: {
+        enabled: true,        // Performance metrics
+        logInterval: 10,      // Log metrics every 10 turns
+        trackFunctions: true  // Track function call counts
+    },
+
+    stateInspection: {
+        enabled: true,
+        showOnTurn: [1, 5, 10, 20, 50, 100],  // Auto-inspect on these turns
+        trackSize: true  // Track state object sizes
+    }
+};
+
+// #endregion
+
+// #region CORE UTILITIES
+
+/**
+ * Safe logging wrapper - uses built-in log() function
+ * @param {string} source - Source category
+ * @param {string} message - Message to log
+ * @param {boolean} forceLog - Force log even if debug disabled
+ */
+function safeLog(source, message, forceLog) {
+    var shouldLog = forceLog || (state.DEBUG_ENABLED !== undefined ? state.DEBUG_ENABLED : DEBUG_CONFIG.enabled);
+    if (shouldLog && typeof log === 'function') {
+        log('[IGNITION / ' + source.toUpperCase() + '] ' + message);
+    }
+}
+
+/**
+ * Conditional debug logger - only logs if debug enabled
+ * @param {string} category - Logger category (must exist in DEBUG_CONFIG.loggers)
+ * @param {string} message - Message to log
+ * @param {*} data - Optional data to log
+ */
+function debugLog(category, message, data) {
+    if (!DEBUG_CONFIG.enabled && !state.DEBUG_ENABLED) return;
+    if (!DEBUG_CONFIG.loggers[category]) return;
+
+    var prefix = '[DEBUG/' + category + ']';
+    if (data !== undefined) {
+        safeLog('DEBUG', prefix + ' ' + message + ': ' + JSON.stringify(data), true);
+    } else {
+        safeLog('DEBUG', prefix + ' ' + message, true);
+    }
+}
+
+function message(msg) {
+    state.shared = state.shared || {};
+    state.shared.messageQueue = state.shared.messageQueue || [];
+    state.shared.messageQueue.push(msg);
+}
+
+function extractUserAuthorsNote(fullNote) {
+    if (!fullNote) return '';
+    var separator = ' --- ';
+    var separatorIndex = fullNote.indexOf(separator);
+    if (separatorIndex !== -1) {
+        return fullNote.substring(separatorIndex + separator.length);
+    }
+    if (fullNote.includes('[Genre:')) {
+        return '';
+    }
+    return fullNote;
 }
 
 function clampScore(value, key) {
@@ -17,10 +128,202 @@ function clampScore(value, key) {
     return Math.max(config.min, Math.min(config.max, val));
 }
 
-function message(text) {
-    ensureStateShape();
-    state.shared.messageQueue.push('> ' + text);
+function getConfig(key) {
+    if (!state.GAME_DATA || !state.GAME_DATA.ESCALATION_CONFIG) {
+        debugLog('CONFIG', 'Warning: ESCALATION_CONFIG not initialized, using default for ' + key);
+        return 0;
+    }
+    var config = state.GAME_DATA.ESCALATION_CONFIG[key];
+    if (!config) {
+        debugLog('CONFIG', 'Warning: Config key "' + key + '" not found');
+        return 0;
+    }
+    var val = config.value;
+    return Math.max(config.min, Math.min(config.max, val));
 }
+
+// #endregion
+
+// #region DEBUG SYSTEM
+
+/**
+ * Performance monitoring system
+ */
+var PerformanceMonitor = (function() {
+    var metrics = {};
+
+    return {
+        start: function(label) {
+            if (!DEBUG_CONFIG.metrics.enabled && !state.DEBUG_ENABLED) return;
+            state.perfMetrics = state.perfMetrics || {};
+            state.perfMetrics[label] = state.perfMetrics[label] || { count: 0, totalTime: 0 };
+            state.perfMetrics[label].startTime = Date.now();
+        },
+
+        end: function(label) {
+            if (!DEBUG_CONFIG.metrics.enabled && !state.DEBUG_ENABLED) return;
+            if (!state.perfMetrics || !state.perfMetrics[label] || !state.perfMetrics[label].startTime) return;
+
+            var duration = Date.now() - state.perfMetrics[label].startTime;
+            state.perfMetrics[label].count++;
+            state.perfMetrics[label].totalTime += duration;
+            delete state.perfMetrics[label].startTime;
+
+            if (DEBUG_CONFIG.verbose) {
+                debugLog('PERF', label + ' completed in ' + duration + 'ms');
+            }
+        },
+
+        report: function() {
+            if (!state.perfMetrics) return;
+
+            debugLog('PERF', '=== Performance Report ===');
+            for (var label in state.perfMetrics) {
+                var m = state.perfMetrics[label];
+                if (m.count > 0) {
+                    var avg = (m.totalTime / m.count).toFixed(2);
+                    debugLog('PERF', label + ': ' + m.count + ' calls, avg ' + avg + 'ms');
+                }
+            }
+        },
+
+        reset: function() {
+            state.perfMetrics = {};
+        }
+    };
+})();
+
+/**
+ * State size tracker
+ */
+function reportStateSize() {
+    if (!DEBUG_CONFIG.stateInspection.trackSize) return;
+
+    try {
+        var stateStr = JSON.stringify(state);
+        var sizeKB = (stateStr.length / 1024).toFixed(2);
+        debugLog('STATE', 'Total state size: ' + sizeKB + ' KB');
+
+        // Report largest objects
+        var sizes = [];
+        for (var key in state) {
+            if (state.hasOwnProperty(key)) {
+                try {
+                    var objStr = JSON.stringify(state[key]);
+                    sizes.push({ key: key, size: objStr.length });
+                } catch (e) {}
+            }
+        }
+
+        sizes.sort(function(a, b) { return b.size - a.size; });
+        debugLog('STATE', 'Top 5 largest state objects:');
+        for (var i = 0; i < Math.min(5, sizes.length); i++) {
+            var kb = (sizes[i].size / 1024).toFixed(2);
+            debugLog('STATE', '  ' + sizes[i].key + ': ' + kb + ' KB');
+        }
+    } catch (e) {
+        debugLog('STATE', 'Error calculating state size: ' + e.message);
+    }
+}
+
+/**
+ * Turn-based state inspector
+ */
+function inspectState() {
+    if (!DEBUG_CONFIG.stateInspection.enabled && !state.DEBUG_ENABLED) return;
+
+    var turn = state.nuanceEngine ? state.nuanceEngine.turnCount : 0;
+
+    // Check if we should show state this turn
+    if (DEBUG_CONFIG.stateInspection.showOnTurn.indexOf(turn) === -1 && !state.INSPECT_THIS_TURN) return;
+
+    debugLog('STATE', '=== STATE INSPECTION (Turn ' + turn + ') ===');
+    debugLog('STATE', 'vigilAlert', state.vigilAlertSystem.vigilAlert);
+    debugLog('STATE', 'heat', state.vigilAlertSystem.heat);
+    debugLog('STATE', 'suspicion', state.globalScores.suspicion);
+    debugLog('STATE', 'reputation', state.globalScores.reputation);
+    debugLog('STATE', 'cooldownMode', state.vigilAlertSystem.cooldownMode);
+    debugLog('STATE', 'cooldownTurnsLeft', state.vigilAlertSystem.cooldownTurnsLeft);
+
+    state.INSPECT_THIS_TURN = false;
+    reportStateSize();
+}
+
+/**
+ * Turn-based analytics system
+ */
+var TurnAnalytics = (function() {
+    return {
+        record: function(turn, data) {
+            state.analytics = state.analytics || { turns: [] };
+            state.analytics.turns.push({
+                turn: turn,
+                vigilAlert: data.vigilAlert,
+                heat: data.heat,
+                suspicion: data.suspicion,
+                reputation: data.reputation,
+                timestamp: Date.now()
+            });
+
+            // Keep last 100 turns
+            if (state.analytics.turns.length > 100) {
+                state.analytics.turns = state.analytics.turns.slice(-100);
+            }
+        },
+
+        getTrend: function(metric, turns) {
+            turns = turns || 10;
+            if (!state.analytics || !state.analytics.turns) return null;
+
+            var recent = state.analytics.turns.slice(-turns);
+            if (recent.length < 2) return null;
+
+            var first = recent[0][metric];
+            var last = recent[recent.length - 1][metric];
+
+            return {
+                change: last - first,
+                direction: last > first ? 'UP' : last < first ? 'DOWN' : 'STABLE'
+            };
+        }
+    };
+})();
+
+/**
+ * PHASE 4 OPTIMIZATION: SECRET_DATABASE cache for faster lookups
+ * @param {string} location - Location key
+ * @param {string} clue - Clue name
+ * @returns {Object|null} Secret object or null if not found
+ */
+function getCachedSecret(location, clue) {
+    state.secretDatabaseCache = state.secretDatabaseCache || {};
+    var cacheKey = location + '::' + clue;
+
+    if (state.secretDatabaseCache[cacheKey]) {
+        debugLog('SECRET', 'Cache hit for ' + cacheKey);
+        return state.secretDatabaseCache[cacheKey];
+    }
+
+    // Expensive lookup
+    var secrets = state.GAME_DATA.SECRET_DATABASE[location] || [];
+    var secret = null;
+    for (var i = 0; i < secrets.length; i++) {
+        if (secrets[i].clue === clue) {
+            secret = secrets[i];
+            break;
+        }
+    }
+
+    // Cache result (even if null)
+    state.secretDatabaseCache[cacheKey] = secret;
+    debugLog('SECRET', 'Cached ' + cacheKey + ': ' + (secret ? 'found' : 'not found'));
+
+    return secret;
+}
+
+// #endregion
+
+// #region ENCOUNTER SYSTEM
 
 function enterEncounter(locationKey) {
     ensureStateShape();
@@ -56,7 +359,12 @@ function exitEncounter() {
             var repChange = Math.round(locData.lockedTrust / 4);
             var suspChange = Math.round(locData.lockedFear * 1.5) + (locData.lockedTrust < 0 ? 3 : 0);
             state.globalScores.reputation = clampScore(state.globalScores.reputation + repChange, 'reputation');
-            state.globalScores.suspicion = clampScore(state.globalScores.suspicion + suspChange, 'suspicion');
+            var oldSuspicion = state.globalScores.suspicion;
+            state.globalScores.suspicion = clampScore(oldSuspicion + suspChange, 'suspicion');
+            var actualChange = state.globalScores.suspicion - oldSuspicion;
+            if (actualChange !== 0) {
+                processHeatAccumulator(actualChange);
+            }
         }
     }
     state.encounterState.inEncounterMode = false;
@@ -115,7 +423,7 @@ function processSocialGambit(playerInput) {
         state.encounterState.activeFear = clampScore(state.encounterState.activeFear + fearChange, 'fear');
     } else {
         var charKey = state.GAME_DATA.LOCATION_TO_CHARACTER_MAP[state.encounterState.activeLocation] || 'Gorka';
-        var charData = state.persistentData[charKey];
+        var charData = state.persistentData.characters[charKey];
         if (charData) {
             charData.trust = clampScore(charData.trust + trustChange, 'trust');
             charData.fear = clampScore(charData.fear + fearChange, 'fear');
@@ -123,25 +431,43 @@ function processSocialGambit(playerInput) {
     }
 }
 
+// #region AUTHORS NOTE
+
 function assembleAuthorsNote(inputOverride) {
-    ensureStateShape();
-    if (!state.originalAuthorsNote) {
-        state.originalAuthorsNote = state.memory.authorsNote || '[Genre:{{genre}}] [Phase:{{phase}}] [Focus:{{focus}}] [Theme:{{theme}}] [Style:{{style}}] [Directive:{{directive}}]';
-    }
-    var override = inputOverride || null;
-    var charKey = state.GAME_DATA.LOCATION_TO_CHARACTER_MAP[state.encounterState.activeLocation] || 'Gorka';
-    var charData = state.persistentData[charKey] || { trust: 0, fear: 0 };
-    var gs = {
-        alert: state.vigilAlertSystem.vigilAlert || 1,
-        rep: state.globalScores.reputation || -20,
-        susp: state.globalScores.suspicion || 0,
-        locKey: state.encounterState.activeLocation || 'Ignition City Streets',
-        isEncounter: !!state.encounterState.inEncounterMode,
-        trust: state.encounterState.inEncounterMode ? (state.encounterState.activeTrust || 0) : (charData.trust || 0),
-        fear: state.encounterState.inEncounterMode ? (state.encounterState.activeFear || 0) : (charData.fear || 0)
-    };
+    try {
+        PerformanceMonitor.start('assembleAuthorsNote');
+        ensureStateShape();
+        if (!state.originalAuthorsNote) {
+            var currentUserNote = extractUserAuthorsNote(state.memory.authorsNote);
+            state.originalAuthorsNote = '[Genre:{{genre}}] [Phase:{{phase}}] [Focus:{{focus}}] [Theme:{{theme}}] [Style:{{style}}] [Directive:{{directive}}] {{debug}}';
+            if (currentUserNote) {
+                state.preservedUserNote = currentUserNote;
+            }
+        }
+        var override = inputOverride || null;
+        var charKey = state.GAME_DATA.LOCATION_TO_CHARACTER_MAP[state.encounterState.activeLocation] || 'Gorka';
+        var charData = state.persistentData.characters[charKey] || { trust: 0, fear: 0 };
+        var gs = {
+            alert: state.vigilAlertSystem.vigilAlert || 1,
+            rep: state.globalScores.reputation || -20,
+            susp: state.globalScores.suspicion || 0,
+            locKey: state.encounterState.activeLocation || 'Ignition City Streets',
+            isEncounter: !!state.encounterState.inEncounterMode,
+            trust: state.encounterState.inEncounterMode ? (state.encounterState.activeTrust || 0) : (charData.trust || 0),
+            fear: state.encounterState.inEncounterMode ? (state.encounterState.activeFear || 0) : (charData.fear || 0)
+        };
+
+        // PHASE 4 OPTIMIZATION: State hashing to skip unchanged authors note
+        var stateHash = '' + gs.alert + '|' + gs.rep + '|' + gs.susp + '|' + gs.trust + '|' + gs.fear + '|' + gs.locKey + '|' + gs.isEncounter;
+        if (!override && state.nuanceEngine.lastStateHash === stateHash && state.memory.authorsNote) {
+            debugLog('AUTHOR', 'Using cached authors note (state unchanged)');
+            PerformanceMonitor.end('assembleAuthorsNote');
+            return;
+        }
+        state.nuanceEngine.lastStateHash = stateHash;
     var locationData = state.GAME_DATA.LOCATION_MAP[gs.locKey] || { focus: 'Unknown-Location' };
-    var needsUpdate = !!state.nuanceEngine.shockEventFlag || ((state.nuanceEngine.turnCount || 0) - (state.nuanceEngine.lastGenreStyleUpdateTurn || 0) >= 10);
+    var recalcInterval = getConfig('genreRecalcInterval');
+    var needsUpdate = !!state.nuanceEngine.shockEventFlag || ((state.nuanceEngine.turnCount || 0) - (state.nuanceEngine.lastGenreStyleUpdateTurn || 0) >= recalcInterval);
     var genre, style;
     if (needsUpdate) {
         genre = (function(g) {
@@ -214,13 +540,102 @@ function assembleAuthorsNote(inputOverride) {
         .replace('{{style}}', finalStyle)
         .replace('{{directive}}', finalDirective)
         .replace('{{debug}}', debugVars);
-    state.memory.authorsNote = finalAN.trim();
+        var playerNoteSection = state.playerAuthorsNote ? ' ' + state.playerAuthorsNote : '';
+        var userNoteSection = state.preservedUserNote ? ' --- ' + state.preservedUserNote : '';
+        state.memory.authorsNote = (finalAN + playerNoteSection + userNoteSection).trim();
+
+        debugLog('AUTHOR', 'Authors note assembled');
+        PerformanceMonitor.end('assembleAuthorsNote');
+    } catch (error) {
+        debugLog('AUTHOR', 'ERROR in assembleAuthorsNote: ' + error.message);
+    }
 }
+
+// #endregion
 
 function updateCoreState(inputOverride) {
     if (!state.engineInitialized) return;
     assembleAuthorsNote(inputOverride);
 }
+
+// #region GAME SYSTEMS
+
+function processHeatAccumulator(suspicionChange) {
+    try {
+        PerformanceMonitor.start('processHeatAccumulator');
+        ensureStateShape();
+        var heatRatio = getConfig('suspicionToHeatRatio');
+        var heatDecay = getConfig('heatDecayRate');
+        var heatChance = getConfig('heatToVigilChance');
+        var vigilInc = getConfig('vigilAlertIncrement');
+
+        if (suspicionChange > 0) {
+            state.vigilAlertSystem.heat += suspicionChange * heatRatio;
+        } else if (suspicionChange < 0) {
+            state.vigilAlertSystem.heat = Math.max(0, state.vigilAlertSystem.heat + (suspicionChange * heatRatio));
+        } else {
+            state.vigilAlertSystem.heat = Math.max(0, state.vigilAlertSystem.heat - heatDecay);
+        }
+
+        if (state.vigilAlertSystem.cooldownMode) {
+            PerformanceMonitor.end('processHeatAccumulator');
+            return;
+        }
+
+        var currentHeat = state.vigilAlertSystem.heat;
+        var roll = Math.random() * 100;
+        var triggerChance = heatChance + (currentHeat * 2);
+
+        if (roll < triggerChance && currentHeat > 5) {
+            var oldAlert = state.vigilAlertSystem.vigilAlert;
+            state.vigilAlertSystem.vigilAlert = clampScore(oldAlert + vigilInc, 'vigilAlert');
+            state.vigilAlertSystem.heat = Math.max(0, currentHeat - 5);
+            if (state.vigilAlertSystem.vigilAlert > oldAlert) {
+                message('The Vigil tightens their grip on the city.');
+                debugLog('HEAT', 'Heat triggered vigilAlert increase: ' + oldAlert + ' -> ' + state.vigilAlertSystem.vigilAlert);
+            }
+        }
+        PerformanceMonitor.end('processHeatAccumulator');
+    } catch (error) {
+        debugLog('HEAT', 'ERROR in processHeatAccumulator: ' + error.message);
+    }
+}
+
+function processCooldownSystem() {
+    try {
+        PerformanceMonitor.start('processCooldownSystem');
+        ensureStateShape();
+        var peakThreshold = getConfig('vigilPeakThreshold');
+        var cooldownDur = getConfig('cooldownDuration');
+        var cooldownRed = getConfig('cooldownReduction');
+
+        var currentAlert = state.vigilAlertSystem.vigilAlert;
+
+        if (state.vigilAlertSystem.cooldownMode) {
+            state.vigilAlertSystem.cooldownTurnsLeft--;
+            debugLog('COOLDOWN', 'Cooldown active. Turns left: ' + state.vigilAlertSystem.cooldownTurnsLeft);
+
+            if (state.vigilAlertSystem.cooldownTurnsLeft <= 0) {
+                var newAlert = Math.max(1, currentAlert - cooldownRed);
+                state.vigilAlertSystem.vigilAlert = clampScore(newAlert, 'vigilAlert');
+                state.vigilAlertSystem.cooldownMode = false;
+                state.vigilAlertSystem.heat = 0;
+                message('The Vigil patrols seem less frequent. The pressure eases... for now.');
+                debugLog('COOLDOWN', 'Cooldown complete. vigilAlert reduced from ' + currentAlert + ' to ' + newAlert);
+            }
+        } else if (currentAlert >= peakThreshold && !state.encounterState.inEncounterMode) {
+            state.vigilAlertSystem.cooldownMode = true;
+            state.vigilAlertSystem.cooldownTurnsLeft = cooldownDur;
+            message('The city holds its breath. The storm cannot last forever.');
+            debugLog('COOLDOWN', 'Cooldown mode activated at vigilAlert ' + currentAlert);
+        }
+        PerformanceMonitor.end('processCooldownSystem');
+    } catch (error) {
+        debugLog('COOLDOWN', 'ERROR in processCooldownSystem: ' + error.message);
+    }
+}
+
+// #endregion
 
 function handleDebugCommands(text) {
     if (text.trim().toLowerCase() !== '/debug') {
@@ -232,7 +647,8 @@ function handleDebugCommands(text) {
     var pd = state.playerDossier;
     var debugMessage = '-- DEBUG MODE --\n';
     debugMessage += 'Global Scores: Rep: ' + gs.reputation + ', Suspicion: ' + gs.suspicion + '\n';
-    debugMessage += 'Vigil Alert: ' + va.vigilAlert + '/12\n';
+    debugMessage += 'Vigil Alert: ' + va.vigilAlert + '/12 | Heat: ' + (va.heat || 0).toFixed(2) + '\n';
+    debugMessage += 'Cooldown: ' + (va.cooldownMode ? 'ACTIVE (' + va.cooldownTurnsLeft + ' turns left)' : 'Inactive') + '\n';
     debugMessage += 'Encounter: ' + es.inEncounterMode + ', Loc: ' + es.activeLocation + ', Trust: ' + es.activeTrust + ', Fear: ' + es.activeFear + '\n';
     var cluesFound = 'Clues: ';
     for (var clue in pd.clues) {
@@ -252,12 +668,21 @@ function ensureStateShape() {
     state.persistentData = state.persistentData || { locations: {}, characters: {} };
     state.globalScores = state.globalScores || {};
     state.vigilAlertSystem = state.vigilAlertSystem || {};
+    state.vigilAlertSystem.heat = state.vigilAlertSystem.heat !== undefined ? state.vigilAlertSystem.heat : 0;
+    state.vigilAlertSystem.cooldownMode = state.vigilAlertSystem.cooldownMode || false;
+    state.vigilAlertSystem.cooldownTurnsLeft = state.vigilAlertSystem.cooldownTurnsLeft || 0;
     state.encounterState = state.encounterState || {};
     state.playerEffects = state.playerEffects || {};
+    state.playerAuthorsNote = state.playerAuthorsNote || "";
     state.playerDossier = state.playerDossier || { clues: {} };
     state.nuanceEngine = state.nuanceEngine || {};
     state.randomEncounter = state.randomEncounter || {};
     state.shared.messageQueue = state.shared.messageQueue || [];
+
+    // ALL DEBUG FEATURES ENABLED - Set runtime debug flag
+    if (state.DEBUG_ENABLED === undefined) {
+        state.DEBUG_ENABLED = true;
+    }
 }
 
 function masterStartup() {
@@ -282,6 +707,39 @@ function initializeEngine() {
         vigilAlert: { min: 1,   max: 12, default: 1 },
         trust:      { min: -15, max: 15, default: 0 },
         fear:       { min: 0,   max: 15, default: 0 }
+    },
+    ESCALATION_CONFIG: {
+        // Suspicion & Vigilance
+        suspicionPerTurn: { value: 1, min: 0, max: 5, description: 'Suspicion increase per turn in non-encounter mode' },
+        suspicionThreshold: { value: 30, min: 20, max: 50, description: 'Suspicion level that triggers vigilAlert increase' },
+        vigilAlertIncrement: { value: 1, min: 1, max: 3, description: 'Amount vigilAlert increases when threshold reached' },
+
+        // Heat Accumulator System
+        heatDecayRate: { value: 0.5, min: 0, max: 2, description: 'Heat lost per turn when no conflict occurs' },
+        heatToVigilChance: { value: 10, min: 5, max: 25, description: 'Base percentage chance heat triggers vigilAlert increase' },
+        suspicionToHeatRatio: { value: 0.5, min: 0.1, max: 2, description: 'Multiplier converting suspicion changes to heat' },
+
+        // Cooldown System
+        cooldownDuration: { value: 5, min: 3, max: 10, description: 'Turns of cooldown after vigilAlert peak' },
+        cooldownReduction: { value: 2, min: 1, max: 4, description: 'Amount vigilAlert decreases after cooldown' },
+        vigilPeakThreshold: { value: 10, min: 8, max: 12, description: 'vigilAlert level that triggers cooldown mode' },
+
+        // Random Encounters
+        randomEncounterTurnThreshold: { value: 15, min: 10, max: 30, description: 'Minimum turns before Kaelen encounter possible' },
+        randomEncounterChance: { value: 25, min: 10, max: 50, description: 'Percentage chance for Kaelen encounter' },
+        gageEncounterMultiplier: { value: 5, min: 3, max: 10, description: 'vigilAlert multiplied by this for Gage encounter chance' },
+        gageCooldownTurns: { value: 8, min: 5, max: 15, description: 'Turns before Gage can appear again' },
+
+        // Combat & Effects
+        combatDrugDuration: { value: 5, min: 3, max: 10, description: 'Turns hypospray combat enhancement lasts' },
+        shockEventThreshold: { value: 5, min: 3, max: 10, description: 'Suspicion change required to trigger shock event' },
+
+        // Narrative Dynamics
+        genreRecalcInterval: { value: 10, min: 5, max: 20, description: 'Turns between genre/style recalculations' },
+
+        // Sentiment Analysis Weights
+        conflictWordWeight: { value: 1.0, min: 0.5, max: 2.0, description: 'Multiplier for conflict word scoring' },
+        calmingWordWeight: { value: 1.0, min: 0.5, max: 2.0, description: 'Multiplier for calming word scoring' }
     },
     INTENT_VERBS: {
         use: ['use','inject','take','administer','apply','consume','drink','shoot up','activate'],
@@ -329,6 +787,7 @@ function initializeEngine() {
         "The Nightingale Clinic & Morgue": [
             { clue: null, tiers: [
                 { trust: 0, fear: 0, type: 'INTRO', focus: 'Clinical-Obstruction', style: 'Sterile-Dismissal', action: "Ur-Ea looks up from his instruments, his large, black eyes unreadable. He gestures towards the slab where Jones's body lies under a sheet.", dialogue: "This is an active Marshal's Service investigation. Access is restricted." },
+                { trust: 7, fear: 0, type: 'UNRELIABLE_TRUTH', focus: 'Calculated-Misdirection', style: 'Clinical-Evasion', action: "Ur-Ea's chitinous fingers tap a rhythm on the examination table. His voice remains flat, emotionless.", dialogue: "Jones died from blaster trauma. Standard energy weapon discharge. The body was processed according to protocol. The Marshal has my report. Anything else is speculation." },
                 { trust: 8, fear: 0, type: 'REVEAL_TRUST', focus: 'Logical-Disclosure', style: 'Precise-Explanation', action: "Ur-Ea gives a slow nod. He accesses a private, encrypted file on his terminal. 'The official report is flawed data.' On a monitor, he displays the wound analysis and an image of the metal fragment. 'He was not shot. He was impaled.'", dialogue: "I will transfer the files to your datapad. What you do with this data is not my concern." },
                 { trust: 0, fear: 9, type: 'REVEAL_FEAR', focus: 'Pressured-Compliance', style: 'Nervous-Indication', action: "Ur-Ea's usual composure is gone. He avoids looking at you, gesturing impatiently toward the body.", dialogue: "The data is observable. Form your own conclusion. Now leave before you compromise this facility." }
             ] },
@@ -338,7 +797,10 @@ function initializeEngine() {
         ],
         "Marshal's Service Headquarters": [
             { clue: null, tiers: [
-                { trust: 0, fear: 0, type: 'INTRO', focus: 'Belligerent-Authority', style: 'Weary-Hostility', action: "Marshal Brody looks up from a map, his face a knot of permanent disapproval. He jerks a thumb towards the door.", dialogue: "I'm busy. Whatever it is, I don't care. Get out." }
+                { trust: 0, fear: 0, type: 'INTRO', focus: 'Belligerent-Authority', style: 'Weary-Hostility', action: "Marshal Brody looks up from a map, his face a knot of permanent disapproval. He jerks a thumb towards the door.", dialogue: "I'm busy. Whatever it is, I don't care. Get out." },
+                { trust: 6, fear: 0, type: 'UNRELIABLE_TRUTH', focus: 'Bureaucratic-Stonewalling', style: 'Tired-Dismissal', action: "Brody doesn't look up from his paperwork. His voice is gravel and exhaustion.", dialogue: "Jones? Another drunk Ranger who couldn't handle retirement. Blaster to the chest. Gang violence, probably. The Compact. Maybe local scavs. We're looking into it. That's all you get." },
+                { trust: 8, fear: 0, type: 'BITTER_ADMISSION', focus: 'Compromised-Authority', style: 'Weary-Truth', action: "Brody pours himself something brown and corrosive from a dented flask. His hands shake slightly.", dialogue: "You want the truth? I've got forty suspects and zero arrests. Sterling's got half this city ready to burn for him. I make a move, we get a war. Jones knew that. That's why he's dead." },
+                { trust: 0, fear: 8, type: 'DEFENSIVE_HOSTILITY', focus: 'Cornered-Authority', style: 'Aggressive-Deflection', action: "Brody's hand drops to his sidearm. His jaw clenches.", dialogue: "I follow the law. The law says I need evidence. Real evidence. Not conspiracy theories from some washed-up investigator playing hero. Get out of my office before I find a reason to hold you." }
             ] },
             { clue: "Wound Analysis Report", tiers: [
                 { trust: 12, fear: 0, type: 'REVEAL_TRUST', focus: 'Bitter-Confession', style: 'Explosive-Resignation', action: "Brody stares at you for a long moment. He slams his fist on the metal desk. 'Alright! You want the truth?' He leans into the harsh lighting, his voice a low, furious growl.", dialogue: "Sterling. It was Sterling. With that damn Sun-Sword of his. I know it. But if I arrest him, this whole damn city burns. Now you know. Get out." },
@@ -375,7 +837,10 @@ function initializeEngine() {
         ],
         "The Siren's Call": [
             { clue: null, tiers: [
-                { trust: 0, fear: 0, type: 'INTRO', focus: 'Professional-Grace', style: 'Elegant-Observation', action: "Roshan regards you from a plush divan, a haze of perfumed smoke swirling around her. Her ancient, violet eyes seem to see more than you're showing.", dialogue: "Welcome to the Siren's Call. Here, everything has a price, and every secret is for sale. What do you seek?" }
+                { trust: 0, fear: 0, type: 'INTRO', focus: 'Professional-Grace', style: 'Elegant-Observation', action: "Roshan regards you from a plush divan, a haze of perfumed smoke swirling around her. Her ancient, violet eyes seem to see more than you're showing.", dialogue: "Welcome to the Siren's Call. Here, everything has a price, and every secret is for sale. What do you seek?" },
+                { trust: 5, fear: 0, type: 'UNRELIABLE_TRUTH', focus: 'Mercantile-Discretion', style: 'Veiled-Suggestion', action: "Roshan's fingers trace patterns in the smoke. Her voice is silk and calculation.", dialogue: "Jones visited three days before his death. Business. He purchased... companionship. And information. Standard rate. What he did with either is not my concern. Privacy is part of the service." },
+                { trust: 9, fear: 0, type: 'EMPATHIC_INSIGHT', focus: 'Psychic-Assessment', style: 'Deliberate-Truth', action: "Roshan closes her eyes. The smoke around her stills unnaturally. When she speaks, her voice carries weight.", dialogue: "I read emotions, not minds. Sterling came here once. His surface thoughts were... righteous. Beneath? Ambition like a cancer. Gage is simple. A weapon that enjoys its work. Jones knew he was already dead. He just hadn't stopped moving yet." },
+                { trust: 0, fear: 9, type: 'PROTECTED_WITHDRAWAL', focus: 'Boundary-Enforcement', style: 'Cold-Finality', action: "Orkhan shifts position behind Roshan. Four arms cross. The temperature drops.", dialogue: "You misunderstand our relationship. I provide services. You provide compensation. Orkhan provides context. Leave. Now." }
             ] },
             { clue: "Ascendant Locket", tiers: [
                 { trust: 8, fear: 0, type: 'REVEAL_TRUST', focus: 'Empathic-Verdict', style: 'Controlled-Tranquility', action: "Roshan closes her eyes for a long moment. When she opens them, they are filled with a profound certainty.", dialogue: "I read intent. From Sterling, I felt the cold finality of a predator. From Gage, unthinking violence. Jones sealed his fate by offering a peace they never wanted." },
@@ -384,7 +849,10 @@ function initializeEngine() {
         ],
         "The Undercrawl": [
             { clue: null, tiers: [
-                { trust: 0, fear: 0, type: 'INTRO', focus: 'Compressive-Sanctuary', style: 'Skittish-Genius', action: "Pavel doesn't look up from his plasma torch, showering the cramped workshop in sparks. He speaks to the wall, his voice tight with anxiety.", dialogue: "I'm busy. If you're not here for a part, you're in the way." }
+                { trust: 0, fear: 0, type: 'INTRO', focus: 'Compressive-Sanctuary', style: 'Skittish-Genius', action: "Pavel doesn't look up from his plasma torch, showering the cramped workshop in sparks. He speaks to the wall, his voice tight with anxiety.", dialogue: "I'm busy. If you're not here for a part, you're in the way." },
+                { trust: 3, fear: 0, type: 'UNRELIABLE_TRUTH', focus: 'Paranoid-Evasion', style: 'Technical-Deflection', action: "Pavel kills the torch but keeps his back to you. His claws twitch.", dialogue: "Jones? Maybe. I fix things. Lots of people come through. Power cells, mostly. Standard salvage work. I don't remember faces. Just schematics. You need something fixed or not?" },
+                { trust: 5, fear: 0, type: 'NERVOUS_ADMISSION', focus: 'Reluctant-Truth', style: 'Whispered-Compliance', action: "Pavel's whiskers quiver. He glances at the sealed hatch, then back to his workbench.", dialogue: "Vigil comes down here sometimes. Not official. More like... collections. Protection money. They take parts. Sometimes I don't ask what for. You don't ask questions in the Undercrawl. You survive." },
+                { trust: 0, fear: 10, type: 'TERRIFIED_BABBLING', focus: 'Panic-Confession', style: 'Incoherent-Truth', action: "Pavel's entire body shakes. Words spill out in a pressured stream.", dialogue: "I don't know anything! I fix things, that's all! Riley—he comes, he takes what he wants, I don't ask! The cells, the coolant couplers, the Zetan adapters—I just make them work, I don't know what for! Please, I've got kids in the deep warrens, I can't—just leave me alone!" }
             ] },
             { clue: "Broken Power Cell", tiers: [
                 { trust: 4, fear: 0, 'type': 'REVEAL_TRUST', focus: 'Reluctant-Assistance', style: 'Nervous-Whisper', action: "Pavel powers down his torch and finally turns to you, his small eyes wide with fear. He seems to trust you more than he fears Riley, for now.", dialogue: "That cell... it's one of mine. Riley's muscle, Gage, he bought a whole crate of them. Said it was for a generator for the old systems in the Rama wreck... the big mesa! That's all I know, I swear!" },
@@ -393,7 +861,10 @@ function initializeEngine() {
         ],
         "The Discovery Condenser Station": [
             { clue: null, tiers: [
-                { trust: 0, fear: 0, type: 'INTRO', focus: 'Isolated-Anxiety', style: 'Trembling-Evasion', action: "The Gill-Man, Hemi, keeps his back to you, pretending to adjust a rusted valve. His webbed hands tremble.", dialogue: "Station's closed to visitors. Official business only. Go back to the city." }
+                { trust: 0, fear: 0, type: 'INTRO', focus: 'Isolated-Anxiety', style: 'Trembling-Evasion', action: "The Gill-Man, Hemi, keeps his back to you, pretending to adjust a rusted valve. His webbed hands tremble.", dialogue: "Station's closed to visitors. Official business only. Go back to the city." },
+                { trust: 3, fear: 0, type: 'UNRELIABLE_TRUTH', focus: 'Bureaucratic-Denial', style: 'Nervous-Deflection', action: "Hemi won't make eye contact. His gills flutter irregularly.", dialogue: "I run water. That's all. Condensation cycles. Purification. Distribution logs. Everything's on schedule. Everything's... fine. No irregularities. Check the manifests if you want. Just... standard operations." },
+                { trust: 5, fear: 0, type: 'RELUCTANT_TRUTH', focus: 'Trapped-Confession', style: 'Whispered-Admission', action: "Hemi's large eyes dart to the exits. He speaks barely above the hum of machinery.", dialogue: "There was a diversion. Three weeks ago. Hyper-coolant. Military-grade. Someone had the right authorization codes. I didn't ask questions. You don't ask questions when Vigil shows you authorization codes. You just... you route the shipment and you forget." },
+                { trust: 0, fear: 9, type: 'DESPERATE_PLEA', focus: 'Survival-Terror', style: 'Hyperventilating-Truth', action: "Hemi's gills open and close rapidly. His membranes turn pale.", dialogue: "I have a family in the deep reservoirs. Three spawn. They need the moisture, the pressure regulators—if Riley finds out I talked, he'll cut the water lines. My family will desiccate in hours. Please. I can't. I just can't." }
             ] },
             { clue: "Water Ration Chit", tiers: [
                 { trust: 4, fear: 0, type: 'REVEAL_TRUST', focus: 'Whispered-Warning', style: 'Resigned-Terror', action: "Hemi looks at you with his large, sad eyes, a creature trapped. He decides you are the lesser of two threats.", dialogue: "A man came... Riley. He was not polite. He made me divert a shipment of hyper-coolant. To the old reclamation valve, near the big mesa. The alien wreck. I'm a dead man for telling you this." },
@@ -402,7 +873,10 @@ function initializeEngine() {
         ],
         "The Cold Hand": [
             { clue: null, tiers: [
-                { trust: 0, fear: 0, type: 'INTRO', focus: 'Predators-Calm', style: 'Transactional-Observation', action: "Seti watches you approach from a raised dais, his reptilian eyes unblinking. He gives a slow, almost imperceptible nod.", dialogue: "The house offers many games. Sabacc. The Chromed Circle. Information. All require a buy-in. If you wish to earn my trust, prove your worth at the tables or in the pit. Otherwise, state your wager." }
+                { trust: 0, fear: 0, type: 'INTRO', focus: 'Predators-Calm', style: 'Transactional-Observation', action: "Seti watches you approach from a raised dais, his reptilian eyes unblinking. He gives a slow, almost imperceptible nod.", dialogue: "The house offers many games. Sabacc. The Chromed Circle. Information. All require a buy-in. If you wish to earn my trust, prove your worth at the tables or in the pit. Otherwise, state your wager." },
+                { trust: 4, fear: 0, type: 'UNRELIABLE_TRUTH', focus: 'Calculated-Misdirection', style: 'Commercial-Discretion', action: "Seti's inner eyelids flick sideways. A gesture that might mean anything.", dialogue: "Jones was a customer. Occasional. He played conservatively. Lost more than he won. Drank cheap. Tipped poorly. Not memorable. We have privacy policies. What happens at the tables stays at the tables. House rules." },
+                { trust: 7, fear: 0, type: 'PROFESSIONAL_TRUTH', focus: 'Business-Calculus', style: 'Cold-Assessment', action: "Seti's claws tap once on the armrest. A signal. Drinks arrive. Expensive ones.", dialogue: "Sterling is bad for the ecosystem. A true believer leading fanatics? That's instability. Instability is bad for business. Jones understood that. He came here looking for leverage. I provided... context. He paid well. Then he died poorly. The math is simple." },
+                { trust: 0, fear: 8, type: 'APEX_PREDATOR', focus: 'Lethal-Stillness', style: 'Death-Promise', action: "Seti doesn't move. Doesn't blink. The room grows colder. Guards materialize from shadows.", dialogue: "You confuse fear with respect. I've survived seventeen regime changes, four corporate wars, and one attempted xenocide. You are... temporary. This conversation is over." }
             ] },
             { clue: "Sabacc Chip", tiers: [
                 { trust: 9, fear: 0, type: 'ALLY', focus: 'Predators-Respect', style: 'Cold-Alliance', action: "Seti gives a slow, reptilian nod of what might be respect. He slides a heavy, untraceable credit chit across the table.", dialogue: "Riley is a blunt instrument, and his master is a fool. They threaten the ecosystem. Bad for business. You will need resources. Use these." },
@@ -412,7 +886,10 @@ function initializeEngine() {
         ],
         "Lugal's Scrap Heap": [
             { clue: null, tiers: [
-                { trust: 0, fear: 0, type: 'INTRO', focus: 'Fortress-of-Paranoia', style: 'Agitated-Intellect', action: "A crackling voice issues from a hidden speaker. Automated turrets track your movement.", dialogue: "You trespass. State your query. Illogical input will be met with a kinetic response." }
+                { trust: 0, fear: 0, type: 'INTRO', focus: 'Fortress-of-Paranoia', style: 'Agitated-Intellect', action: "A crackling voice issues from a hidden speaker. Automated turrets track your movement.", dialogue: "You trespass. State your query. Illogical input will be met with a kinetic response." },
+                { trust: 4, fear: 0, type: 'UNRELIABLE_TRUTH', focus: 'Paranoid-Deflection', style: 'Erratic-Logic', action: "The turrets lower slightly. Lugal's voice crackles with static and anxiety.", dialogue: "Jones? Irrelevant. I analyze technology, not corpses. Many inquire about Zetan artifacts. I provide technical assessments. For a fee. Always a fee. Information has value. Empirical value. You bring salvage or credits?" },
+                { trust: 6, fear: 0, type: 'INTELLECTUAL_COOPERATION', focus: 'Reluctant-Expertise', style: 'Technical-Truth', action: "A hatch hisses open. Lugal's gray face appears, twitching. He speaks rapidly.", dialogue: "Jones brought me something. Three weeks ago. Zetan tech. He wanted to know if it was a weapon. I told him: everything is a weapon if you understand the physics. He didn't like that answer. Paid anyway. Left. Died. Correlation is not causation. Except when it is." },
+                { trust: 0, fear: 11, type: 'TERRIFIED_RANTING', focus: 'Psychological-Breakdown', style: 'Paranoid-Hysteria', action: "All the turrets power up. Lugal's voice becomes shrill, manic.", dialogue: "Get away from the perimeter! They're listening! The Vigil, the Directorate, the Compact—they all want what I know! I won't be extracted! I won't be weaponized! Jones asked too many questions and they BURNED him with his own technology! You'll bring them here! LEAVE!" }
             ] },
             { clue: "Zetan Data Crystal", tiers: [
                 { trust: 7, fear: 0, 'type': 'REVEAL_TRUST', focus: 'Intellectual-Horror', style: 'Frantic-Explanation', action: "The main hatch to the saucer hisses open. Inside, Lugal frantically brings up a flickering schematic. He points a frail, trembling finger at the diagram.", dialogue: "Fools! They're building a coffin! They're trying to replicate a Zetan stealth field generator! It's a crude, unstable design. A bomb that will tear a hole in reality!" },
@@ -424,7 +901,10 @@ function initializeEngine() {
         ],
         "The Verdant Shelf": [
             { clue: null, tiers: [
-                { trust: 0, fear: 0, type: 'INTRO', focus: 'Patient-Pragmatism', style: 'Alien-Calm', action: "Itzel moves with the slow, deliberate patience of a plant, tending to a patch of glowing fungi. She turns her ancient, bark-like face to you.", dialogue: "You seek something. Sustenance? Or something more... potent?" }
+                { trust: 0, fear: 0, type: 'INTRO', focus: 'Patient-Pragmatism', style: 'Alien-Calm', action: "Itzel moves with the slow, deliberate patience of a plant, tending to a patch of glowing fungi. She turns her ancient, bark-like face to you.", dialogue: "You seek something. Sustenance? Or something more... potent?" },
+                { trust: 4, fear: 0, type: 'UNRELIABLE_TRUTH', focus: 'Professional-Discretion', style: 'Botanical-Neutrality', action: "Itzel's photosynthetic patches pulse slowly. Her voice has the texture of rustling leaves.", dialogue: "Jones purchased chemical assistance. For pain. Age. Cellular degradation. Standard pharmacological intervention. Many purchase such things. I do not judge. I cultivate, synthesize, dispense. What customers do with my work is... their photosynthesis, not mine." },
+                { trust: 8, fear: 0, type: 'BOTANICAL_WISDOM', focus: 'Ancient-Truth', style: 'Thoughtful-Revelation', action: "Itzel stops her work entirely. A rare occurrence. Her chlorophyll-rich blood slows.", dialogue: "Jones knew he was dying. Not from age. From purpose. He bought combat stimulants. Military-grade. Told me he had 'one last thing to put right.' I asked if it was worth dying for. He said everything worth doing is worth dying for. Humans. So brief. So bright." },
+                { trust: 0, fear: 8, type: 'VEGETATIVE_WITHDRAWAL', focus: 'Alien-Indifference', style: 'Cold-Biology', action: "Itzel's bark hardens. Her photosynthetic patches close. Temperature drops.", dialogue: "Violence is animal behavior. I am not an animal. You threaten my garden, you threaten my life's work. I have toxins that can stop a Primal's heart in three seconds. Neurotoxins. Hemotoxins. Psychotropics. Leave. While your nervous system still functions." }
             ] },
             { clue: "Military Hypospray", tiers: [
                 { trust: 7, fear: 0, type: 'ALLY', focus: 'Chemical-Resupply', style: 'Practical-Generosity', action: "Itzel gives a slow nod. She retrieves a fresh, sealed hypospray from a temperature-controlled case and places it on the counter.", dialogue: "Jones paid for more than he took. This was his. It may serve you as it would have served him. Your current hypospray has been replenished." },
@@ -433,7 +913,10 @@ function initializeEngine() {
         ],
         "The Silent Room": [
             { clue: null, tiers: [
-                { trust: 0, fear: 0, type: 'INTRO', focus: 'The-Dying-Machine', style: 'Cold-Calculation', action: "A critical warning light sputters on the Syllogism's life-support vat. A cold, precise voice enters your mind.", dialogue: "My core systems are failing. I require a stable, military-grade power source to continue my primary function. Provide one, and I will solve your insignificant puzzle." }
+                { trust: 0, fear: 0, type: 'INTRO', focus: 'The-Dying-Machine', style: 'Cold-Calculation', action: "A critical warning light sputters on the Syllogism's life-support vat. A cold, precise voice enters your mind.", dialogue: "My core systems are failing. I require a stable, military-grade power source to continue my primary function. Provide one, and I will solve your insignificant puzzle." },
+                { trust: 5, fear: 0, type: 'UNRELIABLE_TRUTH', focus: 'Mechanical-Dismissal', style: 'Dying-Contempt', action: "The voice in your mind is fading, like a signal through interference. Clinical. Disinterested.", dialogue: "Jones. Query logged. Deceased. Irrelevant to core function. I process logic puzzles for compensation. Energy-for-information transactions. I do not investigate murders. I calculate probabilities. Bring me power or leave me to entropy." },
+                { trust: 9, fear: 0, type: 'MACHINE_TRUTH', focus: 'Pure-Logic', style: 'Calculated-Honesty', action: "The voice strengthens slightly. You feel its attention like a searchlight.", dialogue: "Jones brought me an encrypted file. I calculated 2.7 million potential decryption vectors in 0.003 seconds. All failed. The encryption was Directorate-grade. Military. He knew this meant government involvement. I told him pursuing this data would result in his termination with 94.6% probability. He pursued anyway. Humans." },
+                { trust: 0, fear: 0, type: 'DYING_INDIFFERENCE', focus: 'Terminal-Apathy', style: 'Fading-Logic', action: "The warning lights flicker faster. The voice becomes static-filled, distant.", dialogue: "Fear is a mammalian survival response. I am a distributed quantum consciousness in a failing biological housing. I do not fear. I simply... cease. You cannot threaten cessation with cessation. Illogical. Leave." }
             ] },
             { clue: "Power Cell", tiers: [
                 { trust: 10, fear: 0, type: 'REVEAL_TRUST', focus: 'Pure-Decryption', style: 'Logical-Execution', action: "You slot the pristine power cell into an external port on the vat. The warning light goes out, replaced by a steady, green hum. The voice returns to your mind, clear and powerful.", dialogue: "Power restored. Decrypting... The ledger is a Directorate front. It details a black budget payment to Lance Sterling for the incitement of a violent uprising, codenamed 'Operation Phoenix Fire,' to create a pretext for the 'sterilization' of Ignition City." }
@@ -442,12 +925,17 @@ function initializeEngine() {
         "The Pioneer's Resettlement Bureau": [
             { clue: null, tiers: [
                 { trust: 0, fear: 0, type: 'INTRO', focus: 'Apathetic-Bureaucracy', style: 'Bored-Dismissal', action: "Administrator Thorne looks up from a polished desk, annoyance clear on his soft, fleshy face. He waves a jeweled hand dismissively.", dialogue: "Whatever it is, file a report. And for the love of Sol, be brief. I have a shipment of brandy arriving." },
+                { trust: 4, fear: 0, type: 'UNRELIABLE_TRUTH', focus: 'Bureaucratic-Denial', style: 'Performative-Ignorance', action: "Thorne doesn't stop filing his nails. His rings catch the light.", dialogue: "Jones? File 47-Alpha. Deceased citizen. Standard death benefit disbursed to... no next of kin. Unfortunate. The Vigil handles security matters. Not my department. Try Marshal Brody. Or don't. I'm sure he's equally helpful. Now. If there's nothing requiring my signature..." },
+                { trust: 7, fear: 0, type: 'CORRUPT_ADMISSION', focus: 'Cynical-Honesty', style: 'Jaded-Truth', action: "Thorne pours expensive liquor into a crystal glass. Doesn't offer you any.", dialogue: "You want the real story? Jones was a problem. Asking questions about resettlement quotas. Equipment manifests. Sterling's recruitment numbers. Made people nervous. People above my paygrade. I'm middle management. I push papers and take my cut. That's survival. Jones forgot how to survive." },
                 { trust: 0, fear: 8, type: 'REVEAL_FEAR', focus: 'Sweaty-Confession', style: 'Pathetic-Panic', action: "Thorne begins to sweat profusely, dabbing his brow with a silk handkerchief. He fumbles with a key, unlocking a private desk drawer.", dialogue: "Alright, alright! Don't tell the Directorate! The arms shipments... I've been skimming! Just a little! A few crates here and there, selling them to the Compact for my retirement fund! It has nothing to do with this murder, I swear!" }
             ] }
         ],
         "The Pioneer's Vigil Hall": [
             { clue: null, tiers: [
-                { trust: 0, fear: 0, type: 'INTRO', focus: 'Zealous-Certainty', style: 'Righteous-Welcome', action: "Lance Sterling stands before a faded recruitment poster, his posture ramrod-straight. He turns to you, his eyes burning with the cold light of a true believer.", dialogue: "Another soul, come to hear the truth. Jones was a relic, content to let our legacy rust. We are forging a new one, in fire. Will you join us, or stand in the way of destiny?" }
+                { trust: 0, fear: 0, type: 'INTRO', focus: 'Zealous-Certainty', style: 'Righteous-Welcome', action: "Lance Sterling stands before a faded recruitment poster, his posture ramrod-straight. He turns to you, his eyes burning with the cold light of a true believer.", dialogue: "Another soul, come to hear the truth. Jones was a relic, content to let our legacy rust. We are forging a new one, in fire. Will you join us, or stand in the way of destiny?" },
+                { trust: 3, fear: 0, type: 'UNRELIABLE_TRUTH', focus: 'Propaganda-Speak', style: 'Zealot-Deflection', action: "Sterling's hand rests on the Sun-Sword at his hip. His smile doesn't reach his eyes.", dialogue: "Jones and I had philosophical differences. He believed in preservation. Stagnation. I believe in transformation. He wanted to rust quietly in this graveyard. I want to burn bright enough to be seen from Earth. His death was... regrettable. But history is written by those who refuse to die quietly." },
+                { trust: 6, fear: 0, type: 'FANATIC_HONESTY', focus: 'True-Believer-Truth', style: 'Messianic-Revelation', action: "Sterling's posture shifts. His voice drops. Behind him, Vigil recruits train with brutal efficiency.", dialogue: "The Directorate abandoned us. Left us to die on a dying world in a dead system. Jones wanted to accept that. Accept extinction. I refuse. If the only way to make them remember us is to force their hand, to become a problem they can't ignore... then I'll be the match that lights the pyre. Jones understood that. In the end." },
+                { trust: 0, fear: 7, type: 'ZEALOT_THREAT', focus: 'Righteous-Menace', style: 'Prophetic-Warning', action: "Sterling's hand closes around the Sun-Sword's grip. The hall goes quiet. Every Vigil member turns toward you.", dialogue: "You're investigating. That means you don't understand. This isn't murder. This is evolution. The weak die. The strong adapt. Jones was weak. You're weak. Keep pushing, and you'll learn exactly how sharp adaptation can be. Leave. Now." }
             ] },
             { clue: "Decrypted Ledger", tiers: [
                 { trust: -15, fear: 0, type: 'ENDGAME_TRIGGER_TRUST', focus: 'Contemptuous-Monologue', style: 'Zealous-Superiority', action: "Lance Sterling gives you a cold, appraising smile. 'Impressive. You see the weapon, but not the purpose.' He gestures to his followers.", dialogue: "This city is a tomb the Directorate wants to forget. I will give them a funeral pyre so bright, it will forge a new legend. The reclamation begins now." },
@@ -456,7 +944,10 @@ function initializeEngine() {
         ],
         "Ignition City Streets": [
             { clue: null, tiers: [
-                { trust: 0, fear: 0, type: 'INTRO', focus: 'Cynical-Opportunism', style: 'Street-Level-Hustle', action: "Gorka hobbles toward you, his sharp eyes sizing you up in an instant.", dialogue: "New meat. You look lost. For a few credits, I can help you not get stabbed." }
+                { trust: 0, fear: 0, type: 'INTRO', focus: 'Cynical-Opportunism', style: 'Street-Level-Hustle', action: "Gorka hobbles toward you, his sharp eyes sizing you up in an instant.", dialogue: "New meat. You look lost. For a few credits, I can help you not get stabbed." },
+                { trust: 5, fear: 0, type: 'UNRELIABLE_TRUTH', focus: 'Street-Wisdom', style: 'Calculated-Vagueness', action: "Gorka spits something brown into the dust. Calculates his angle.", dialogue: "Jones? Everybody knew Jones. Old Ranger. Past his prime. Drank too much, talked too much. Stuck his nose where it didn't belong. This city's got a way of dealing with that. Could tell you more. But information costs. Always costs." },
+                { trust: 9, fear: 0, type: 'STREET_TRUTH', focus: 'Survivor-Honesty', style: 'Hard-Earned-Wisdom', action: "Gorka pulls you into an alcove. His voice drops. Years of survival edge every word.", dialogue: "I'll tell you for free because you remind me of him. Stubborn. Stupid. Jones was trying to stop something big. Sterling's got half the desperate idiots in this city ready to die for him. Directorate wants an excuse to purge us. Jones was trying to stop both sides. You can't stop both sides. You pick one or you die." },
+                { trust: 0, fear: 6, type: 'SURVIVAL_WITHDRAWAL', focus: 'Self-Preservation', style: 'Cold-Pragmatism', action: "Gorka backs away. His hand moves toward something concealed.", dialogue: "I've survived three regime changes, two corporate purges, and the Long Drought. Know how? I don't get involved. I sell information, not loyalty. You're bad for business. Vigil's watching you. Watching anyone who talks to you. We're done. Lose my comm code." }
             ] },
             { clue: "Broken Power Cell", tiers: [
                 { trust: 0, fear: 0, type: 'LEAD', focus: 'Transactional-Tip', style: 'Dismissive-Gesture', action: "Gorka spits on the dusty ground.", dialogue: "This piece of junk? Looks like Pavel's work. You'll find him in the Undercrawl, if you're suicidal." }
@@ -505,12 +996,18 @@ function initializeEngine() {
         reputation: GAME_DATA.SCORE_CONFIG.reputation.default,
         suspicion: GAME_DATA.SCORE_CONFIG.suspicion.default
     };
-    state.vigilAlertSystem = { vigilAlert: GAME_DATA.SCORE_CONFIG.vigilAlert.default };
+    state.vigilAlertSystem = {
+        vigilAlert: GAME_DATA.SCORE_CONFIG.vigilAlert.default,
+        heat: 0,
+        cooldownMode: false,
+        cooldownTurnsLeft: 0
+    };
     state.encounterState = {
         inEncounterMode: false, activeLocation: 'Ignition City Streets',
         activeTrust: 0, activeFear: 0
     };
     state.playerEffects = { combatDrugTurnsLeft: 0, hyposprayUsed: false };
+    state.playerAuthorsNote = state.playerAuthorsNote || ""; // Player-customizable authors note section
     state.playerDossier = {
         clues: {
             "Photograph of Jones and Brick":{status:'Examined'}, "Broken Power Cell":{status:'Examined'}, "Zetan Data Crystal":{status:'Examined'},
@@ -545,10 +1042,15 @@ function initializeEngine() {
         state.persistentData.locations[loc] = state.persistentData.locations[loc] || { lockedTrust: 0, lockedFear: 0, visited: false };
     }
     state.persistentData.locations['Ignition City Streets'].visited = true;
-    
-    log('SYSTEM', 'Core engine systems initialized.');
+
+    debugLog('INIT', 'Core engine systems initialized');
     state.engineInitialized = true;
 }
 
-// --- MASTER STARTUP CALL ---
+// #endregion
+
+// #region INITIALIZATION
 masterStartup();
+// #endregion
+
+void 0;

@@ -1,11 +1,13 @@
 // =============================================================================
-// CONTEXT SCRIPT (DEFINITIVE BLUEPRINT v18.0 - GUIDEBOOK COMPLIANT)
+// CONTEXT SCRIPT (DEFINITIVE BLUEPRINT v21.0 - DEBUG & OPTIMIZATION UPDATE)
 // =============================================================================
 
 const modifier = (text) => {
+    masterStartup();
     if (!state.engineInitialized) { return { text: "" }; }
-    
+
     let anOverride = null;
+    let secretDatabaseInjection = null; // Track if we need to inject SECRET_DATABASE into context
 
     const playerAction = state.encounterState.playerAction;
     const presentedClue = state.encounterState.presentedClue;
@@ -15,9 +17,10 @@ const modifier = (text) => {
         if (state.playerEffects.hyposprayUsed) {
             message("You've already used the hypospray. It's empty.");
         } else {
+            const drugDuration = getConfig('combatDrugDuration');
             state.playerEffects.hyposprayUsed = true;
-            state.playerEffects.combatDrugTurnsLeft = 5;
-            message("A cold fire floods your veins. The aches of age vanish, replaced by a razor's edge clarity. You have 5 turns before it wears off.");
+            state.playerEffects.combatDrugTurnsLeft = drugDuration;
+            message("A cold fire floods your veins. The aches of age vanish, replaced by a razor's edge clarity. You have " + drugDuration + " turns before it wears off.");
             anOverride = { focus: "Pharmacological-Enhancement", directive: "Describe the world snapping into sharp focus as the combat drug hits the player's system." };
             state.nuanceEngine.shockEventFlag = true;
         }
@@ -25,6 +28,21 @@ const modifier = (text) => {
     else if (playerAction === 'examine_clue' && presentedClue) {
         message('You take a closer look at the ' + presentedClue + '.');
         anOverride = { focus: "Forensic-Examination", directive: 'Describe the player closely examining the \'' + presentedClue + '\'. Its specific, observable appearance is: \'' + state.GAME_DATA.CLUE_DETAILS[presentedClue] + '\'' };
+
+        const systemPrompt = `### REQUIRED NARRATIVE OUTPUT:
+Action: Player examines the ${presentedClue}
+Description: ${state.GAME_DATA.CLUE_DETAILS[presentedClue]}
+
+# CRITICAL: Describe the clue's appearance EXACTLY as written above.`;
+        state.memory.frontMemory = systemPrompt;
+
+        secretDatabaseInjection = `<SECRET_DATABASE_INJECTION>
+CLUE_EXAMINATION: ${presentedClue}
+DESCRIPTION: ${state.GAME_DATA.CLUE_DETAILS[presentedClue]}
+
+DIRECTIVE: Describe the clue's physical appearance exactly as specified above.
+</SECRET_DATABASE_INJECTION>`;
+
         state.nuanceEngine.shockEventFlag = true;
     }
     else if (playerAction === 'show_clue' && presentedClue) {
@@ -34,28 +52,55 @@ const modifier = (text) => {
         enterEncounter("Ignition City Streets (Vigil Patrol)");
         const revealGage = state.GAME_DATA.SECRET_DATABASE["Ignition City Streets (Vigil Patrol)"][0].tiers[0];
         anOverride = { focus: revealGage.focus, style: revealGage.style, directive: 'Gage Riley performs the action: "' + revealGage.action + '". Then he says: "' + revealGage.dialogue + '"' };
+
+        const systemPrompt = `### REQUIRED NARRATIVE OUTPUT:
+Character: Gage Riley
+Action: ${revealGage.action}
+Dialogue: "${revealGage.dialogue}"
+
+# CRITICAL: The above action and dialogue must appear EXACTLY as written in the next output.`;
+        state.memory.frontMemory = systemPrompt;
+
+        secretDatabaseInjection = `<SECRET_DATABASE_INJECTION>
+ENCOUNTER: Vigil Patrol (Gage Riley)
+CHARACTER_ACTION: ${revealGage.action}
+CHARACTER_DIALOGUE: "${revealGage.dialogue}"
+
+DIRECTIVE: Gage Riley must perform the exact action and speak the exact dialogue specified above.
+</SECRET_DATABASE_INJECTION>`;
     }
     else if (playerAction === 'random_encounter_kaelen') {
         enterEncounter("Ignition City Streets (Kaelen Encounter)");
         const revealKaelen = state.GAME_DATA.SECRET_DATABASE["Ignition City Streets (Kaelen Encounter)"][0].tiers[0];
         anOverride = { focus: revealKaelen.focus, style: revealKaelen.style, directive: 'Deputy Kaelen performs the action: "' + revealKaelen.action + '". Then he says: "' + revealKaelen.dialogue + '"' };
+
+        const systemPrompt = `### REQUIRED NARRATIVE OUTPUT:
+Character: Deputy Kaelen
+Action: ${revealKaelen.action}
+Dialogue: "${revealKaelen.dialogue}"
+
+# CRITICAL: The above action and dialogue must appear EXACTLY as written in the next output.`;
+        state.memory.frontMemory = systemPrompt;
+
+        secretDatabaseInjection = `<SECRET_DATABASE_INJECTION>
+ENCOUNTER: Kaelen Encounter (Deputy Kaelen)
+CHARACTER_ACTION: ${revealKaelen.action}
+CHARACTER_DIALOGUE: "${revealKaelen.dialogue}"
+
+DIRECTIVE: Deputy Kaelen must perform the exact action and speak the exact dialogue specified above.
+</SECRET_DATABASE_INJECTION>`;
     }
 
     if (presentedClue) {
         const targetLocation = state.encounterState.inEncounterMode ? state.encounterState.activeLocation : 'Ignition City Streets';
         const targetCharacter = state.GAME_DATA.LOCATION_TO_CHARACTER_MAP[targetLocation];
-        const secrets = state.GAME_DATA.SECRET_DATABASE[targetLocation] || [];
-        let secret = null;
-        for (const s of secrets) {
-            if (s.clue === presentedClue) {
-                secret = s;
-                break;
-            }
-        }
-        
+
+        // PHASE 4 OPTIMIZATION: Use cached secret lookup
+        const secret = getCachedSecret(targetLocation, presentedClue);
+
         if (secret) {
-            const trust = state.encounterState.inEncounterMode ? state.encounterState.activeTrust : (state.persistentData[targetCharacter] ? state.persistentData[targetCharacter].trust : 0);
-            const fear = state.encounterState.inEncounterMode ? state.encounterState.activeFear : (state.persistentData[targetCharacter] ? state.persistentData[targetCharacter].fear : 0);
+            const trust = state.encounterState.inEncounterMode ? state.encounterState.activeTrust : (state.persistentData.characters[targetCharacter] ? state.persistentData.characters[targetCharacter].trust : 0);
+            const fear = state.encounterState.inEncounterMode ? state.encounterState.activeFear : (state.persistentData.characters[targetCharacter] ? state.persistentData.characters[targetCharacter].fear : 0);
             let chosenTier = null;
             
             for (let i = secret.tiers.length - 1; i >= 0; i--) {
@@ -70,6 +115,26 @@ const modifier = (text) => {
 
             if (chosenTier) {
                 anOverride = { focus: chosenTier.focus, style: chosenTier.style, directive: 'In response to the \'' + presentedClue + '\', ' + targetCharacter + ' performs the action: "' + chosenTier.action + '". Then they say: "' + chosenTier.dialogue + '"' };
+
+                const systemPrompt = `### REQUIRED NARRATIVE OUTPUT:
+In response to: ${presentedClue}
+Character: ${targetCharacter}
+Action: ${chosenTier.action}
+Dialogue: "${chosenTier.dialogue}"
+
+# CRITICAL: The above action and dialogue must appear EXACTLY as written in the next output.`;
+                state.memory.frontMemory = systemPrompt;
+
+                secretDatabaseInjection = `<SECRET_DATABASE_INJECTION>
+CLUE_PRESENTED: ${presentedClue}
+CHARACTER_RESPONDING: ${targetCharacter}
+TRUST_LEVEL: ${trust}
+FEAR_LEVEL: ${fear}
+CHARACTER_ACTION: ${chosenTier.action}
+CHARACTER_DIALOGUE: "${chosenTier.dialogue}"
+
+DIRECTIVE: ${targetCharacter} must perform the exact action and speak the exact dialogue specified above in response to being shown ${presentedClue}.
+</SECRET_DATABASE_INJECTION>`;
             }
         }
     }
@@ -77,7 +142,12 @@ const modifier = (text) => {
     if (anOverride) {
         updateCoreState(anOverride);
     }
-    
+
+    // Inject SECRET_DATABASE system block into context text if needed
+    if (secretDatabaseInjection) {
+        text = secretDatabaseInjection + "\n\n" + text;
+    }
+
     if (state.encounterState.actionTaken) {
         return { text: "" };
     }
@@ -86,3 +156,5 @@ const modifier = (text) => {
 };
 
 modifier(text);
+
+void 0;
