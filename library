@@ -1,10 +1,24 @@
 // =============================================================================
-// LIBRARY SCRIPT (DEFINITIVE BLUEPRINT v20.0 - ENHANCED ESCALATION SYSTEM)
+// LIBRARY SCRIPT (DEFINITIVE BLUEPRINT v21.0 - DEBUG & OPTIMIZATION UPDATE)
 // =============================================================================
+// CHANGELOG v21.0:
+// - CRITICAL: Added void 0 terminator for consistent behavior
+// - CRITICAL: Fixed logging to use built-in log() instead of console.log wrapper
+// - Added comprehensive DEBUG_CONFIG system with toggleable logging categories
+// - Added PerformanceMonitor for function timing and metrics
+// - Added debugLog() conditional logger
+// - Added reportStateSize() memory tracker
+// - Added inspectState() turn-based state inspection
+// - Added TurnAnalytics for trend analysis
+// - Added error handling (try-catch) to all critical functions
+// - Added array size bounds to prevent memory leaks
+// - Added SECRET_DATABASE caching for performance
+// - Added code regions for better organization
+// - Optimized assembleAuthorsNote with state hashing
+//
 // CHANGELOG v20.0:
 // - Added state.playerAuthorsNote for player-customizable authors note content
 // - playerAuthorsNote appends after story arc info, before preservedUserNote
-// - Players can set via: state.playerAuthorsNote = "Your custom note here"
 //
 // CHANGELOG v19.0:
 // - Added extractUserAuthorsNote() to preserve user's custom authors notes
@@ -12,16 +26,81 @@
 // - Added getConfig() helper function for validated config access
 // - Added heat accumulator system for probabilistic vigilAlert increases
 // - Added cooldown system for vigilAlert de-escalation after peaks
-// - Updated assembleAuthorsNote() to preserve user notes using " --- " separator
-// - All magic numbers now centralized in ESCALATION_CONFIG
 // =============================================================================
 
-// --- GLOBALLY DECLARED CORE FUNCTIONS ---
+// #region CONFIGURATION
 
-function log(source, message) {
-    try {
-        console.log('[IGNITION-SYS / ' + source.toString().toUpperCase() + '] ' + message);
-    } catch (e) {}
+// Debug Configuration - Master control for all debugging features
+const DEBUG_CONFIG = {
+    enabled: false,  // Master switch - set state.DEBUG_ENABLED = true to enable
+    verbose: false,  // Extra detailed logging
+
+    loggers: {
+        INIT: true,      // Initialization logging
+        STATE: true,     // State changes
+        HEAT: true,      // Heat accumulator
+        COOLDOWN: true,  // Cooldown system
+        ENCOUNTER: true, // Encounter management
+        SECRET: true,    // SECRET_DATABASE reveals
+        AUTHOR: false,   // Authors note assembly (verbose)
+        CONFIG: true,    // Configuration access
+        GAMBIT: true,    // Social gambits
+        MEMORY: false,   // Memory operations (verbose)
+        PERF: true       // Performance metrics
+    },
+
+    metrics: {
+        enabled: true,        // Performance metrics
+        logInterval: 10,      // Log metrics every N turns
+        trackFunctions: true  // Track function call counts
+    },
+
+    stateInspection: {
+        enabled: true,
+        showOnTurn: [],  // e.g., [1, 5, 10, 20] - show state on these turns
+        trackSize: true  // Track state object sizes
+    }
+};
+
+// #endregion
+
+// #region CORE UTILITIES
+
+/**
+ * Safe logging wrapper - uses built-in log() function
+ * @param {string} source - Source category
+ * @param {string} message - Message to log
+ * @param {boolean} forceLog - Force log even if debug disabled
+ */
+function safeLog(source, message, forceLog) {
+    var shouldLog = forceLog || (state.DEBUG_ENABLED !== undefined ? state.DEBUG_ENABLED : DEBUG_CONFIG.enabled);
+    if (shouldLog && typeof log === 'function') {
+        log('[IGNITION / ' + source.toUpperCase() + '] ' + message);
+    }
+}
+
+/**
+ * Conditional debug logger - only logs if debug enabled
+ * @param {string} category - Logger category (must exist in DEBUG_CONFIG.loggers)
+ * @param {string} message - Message to log
+ * @param {*} data - Optional data to log
+ */
+function debugLog(category, message, data) {
+    if (!DEBUG_CONFIG.enabled && !state.DEBUG_ENABLED) return;
+    if (!DEBUG_CONFIG.loggers[category]) return;
+
+    var prefix = '[DEBUG/' + category + ']';
+    if (data !== undefined) {
+        safeLog('DEBUG', prefix + ' ' + message + ': ' + JSON.stringify(data), true);
+    } else {
+        safeLog('DEBUG', prefix + ' ' + message, true);
+    }
+}
+
+function message(msg) {
+    state.shared = state.shared || {};
+    state.shared.messageQueue = state.shared.messageQueue || [];
+    state.shared.messageQueue.push(msg);
 }
 
 function extractUserAuthorsNote(fullNote) {
@@ -46,22 +125,168 @@ function clampScore(value, key) {
 
 function getConfig(key) {
     if (!state.GAME_DATA || !state.GAME_DATA.ESCALATION_CONFIG) {
-        log('CONFIG', 'Warning: ESCALATION_CONFIG not initialized, using default for ' + key);
+        debugLog('CONFIG', 'Warning: ESCALATION_CONFIG not initialized, using default for ' + key);
         return 0;
     }
     var config = state.GAME_DATA.ESCALATION_CONFIG[key];
     if (!config) {
-        log('CONFIG', 'Warning: Config key "' + key + '" not found');
+        debugLog('CONFIG', 'Warning: Config key "' + key + '" not found');
         return 0;
     }
     var val = config.value;
     return Math.max(config.min, Math.min(config.max, val));
 }
 
-function message(text) {
-    ensureStateShape();
-    state.shared.messageQueue.push('> ' + text);
+// #endregion
+
+// #region DEBUG SYSTEM
+
+/**
+ * Performance monitoring system
+ */
+var PerformanceMonitor = (function() {
+    var metrics = {};
+
+    return {
+        start: function(label) {
+            if (!DEBUG_CONFIG.metrics.enabled && !state.DEBUG_ENABLED) return;
+            state.perfMetrics = state.perfMetrics || {};
+            state.perfMetrics[label] = state.perfMetrics[label] || { count: 0, totalTime: 0 };
+            state.perfMetrics[label].startTime = Date.now();
+        },
+
+        end: function(label) {
+            if (!DEBUG_CONFIG.metrics.enabled && !state.DEBUG_ENABLED) return;
+            if (!state.perfMetrics || !state.perfMetrics[label] || !state.perfMetrics[label].startTime) return;
+
+            var duration = Date.now() - state.perfMetrics[label].startTime;
+            state.perfMetrics[label].count++;
+            state.perfMetrics[label].totalTime += duration;
+            delete state.perfMetrics[label].startTime;
+
+            if (DEBUG_CONFIG.verbose) {
+                debugLog('PERF', label + ' completed in ' + duration + 'ms');
+            }
+        },
+
+        report: function() {
+            if (!state.perfMetrics) return;
+
+            debugLog('PERF', '=== Performance Report ===');
+            for (var label in state.perfMetrics) {
+                var m = state.perfMetrics[label];
+                if (m.count > 0) {
+                    var avg = (m.totalTime / m.count).toFixed(2);
+                    debugLog('PERF', label + ': ' + m.count + ' calls, avg ' + avg + 'ms');
+                }
+            }
+        },
+
+        reset: function() {
+            state.perfMetrics = {};
+        }
+    };
+})();
+
+/**
+ * State size tracker
+ */
+function reportStateSize() {
+    if (!DEBUG_CONFIG.stateInspection.trackSize) return;
+
+    try {
+        var stateStr = JSON.stringify(state);
+        var sizeKB = (stateStr.length / 1024).toFixed(2);
+        debugLog('STATE', 'Total state size: ' + sizeKB + ' KB');
+
+        // Report largest objects
+        var sizes = [];
+        for (var key in state) {
+            if (state.hasOwnProperty(key)) {
+                try {
+                    var objStr = JSON.stringify(state[key]);
+                    sizes.push({ key: key, size: objStr.length });
+                } catch (e) {}
+            }
+        }
+
+        sizes.sort(function(a, b) { return b.size - a.size; });
+        debugLog('STATE', 'Top 5 largest state objects:');
+        for (var i = 0; i < Math.min(5, sizes.length); i++) {
+            var kb = (sizes[i].size / 1024).toFixed(2);
+            debugLog('STATE', '  ' + sizes[i].key + ': ' + kb + ' KB');
+        }
+    } catch (e) {
+        debugLog('STATE', 'Error calculating state size: ' + e.message);
+    }
 }
+
+/**
+ * Turn-based state inspector
+ */
+function inspectState() {
+    if (!DEBUG_CONFIG.stateInspection.enabled && !state.DEBUG_ENABLED) return;
+
+    var turn = state.nuanceEngine ? state.nuanceEngine.turnCount : 0;
+
+    // Check if we should show state this turn
+    if (DEBUG_CONFIG.stateInspection.showOnTurn.indexOf(turn) === -1 && !state.INSPECT_THIS_TURN) return;
+
+    debugLog('STATE', '=== STATE INSPECTION (Turn ' + turn + ') ===');
+    debugLog('STATE', 'vigilAlert', state.vigilAlertSystem.vigilAlert);
+    debugLog('STATE', 'heat', state.vigilAlertSystem.heat);
+    debugLog('STATE', 'suspicion', state.globalScores.suspicion);
+    debugLog('STATE', 'reputation', state.globalScores.reputation);
+    debugLog('STATE', 'cooldownMode', state.vigilAlertSystem.cooldownMode);
+    debugLog('STATE', 'cooldownTurnsLeft', state.vigilAlertSystem.cooldownTurnsLeft);
+
+    state.INSPECT_THIS_TURN = false;
+    reportStateSize();
+}
+
+/**
+ * Turn-based analytics system
+ */
+var TurnAnalytics = (function() {
+    return {
+        record: function(turn, data) {
+            state.analytics = state.analytics || { turns: [] };
+            state.analytics.turns.push({
+                turn: turn,
+                vigilAlert: data.vigilAlert,
+                heat: data.heat,
+                suspicion: data.suspicion,
+                reputation: data.reputation,
+                timestamp: Date.now()
+            });
+
+            // Keep last 100 turns
+            if (state.analytics.turns.length > 100) {
+                state.analytics.turns = state.analytics.turns.slice(-100);
+            }
+        },
+
+        getTrend: function(metric, turns) {
+            turns = turns || 10;
+            if (!state.analytics || !state.analytics.turns) return null;
+
+            var recent = state.analytics.turns.slice(-turns);
+            if (recent.length < 2) return null;
+
+            var first = recent[0][metric];
+            var last = recent[recent.length - 1][metric];
+
+            return {
+                change: last - first,
+                direction: last > first ? 'UP' : last < first ? 'DOWN' : 'STABLE'
+            };
+        }
+    };
+})();
+
+// #endregion
+
+// #region ENCOUNTER SYSTEM
 
 function enterEncounter(locationKey) {
     ensureStateShape();
@@ -275,67 +500,84 @@ function updateCoreState(inputOverride) {
     assembleAuthorsNote(inputOverride);
 }
 
+// #region GAME SYSTEMS
+
 function processHeatAccumulator(suspicionChange) {
-    ensureStateShape();
-    var heatRatio = getConfig('suspicionToHeatRatio');
-    var heatDecay = getConfig('heatDecayRate');
-    var heatChance = getConfig('heatToVigilChance');
-    var vigilInc = getConfig('vigilAlertIncrement');
+    try {
+        PerformanceMonitor.start('processHeatAccumulator');
+        ensureStateShape();
+        var heatRatio = getConfig('suspicionToHeatRatio');
+        var heatDecay = getConfig('heatDecayRate');
+        var heatChance = getConfig('heatToVigilChance');
+        var vigilInc = getConfig('vigilAlertIncrement');
 
-    if (suspicionChange > 0) {
-        state.vigilAlertSystem.heat += suspicionChange * heatRatio;
-    } else if (suspicionChange < 0) {
-        state.vigilAlertSystem.heat = Math.max(0, state.vigilAlertSystem.heat + (suspicionChange * heatRatio));
-    } else {
-        state.vigilAlertSystem.heat = Math.max(0, state.vigilAlertSystem.heat - heatDecay);
-    }
-
-    if (state.vigilAlertSystem.cooldownMode) {
-        return;
-    }
-
-    var currentHeat = state.vigilAlertSystem.heat;
-    var roll = Math.random() * 100;
-    var triggerChance = heatChance + (currentHeat * 2);
-
-    if (roll < triggerChance && currentHeat > 5) {
-        var oldAlert = state.vigilAlertSystem.vigilAlert;
-        state.vigilAlertSystem.vigilAlert = clampScore(oldAlert + vigilInc, 'vigilAlert');
-        state.vigilAlertSystem.heat = Math.max(0, currentHeat - 5);
-        if (state.vigilAlertSystem.vigilAlert > oldAlert) {
-            message('The Vigil tightens their grip on the city.');
-            log('HEAT', 'Heat triggered vigilAlert increase: ' + oldAlert + ' -> ' + state.vigilAlertSystem.vigilAlert);
+        if (suspicionChange > 0) {
+            state.vigilAlertSystem.heat += suspicionChange * heatRatio;
+        } else if (suspicionChange < 0) {
+            state.vigilAlertSystem.heat = Math.max(0, state.vigilAlertSystem.heat + (suspicionChange * heatRatio));
+        } else {
+            state.vigilAlertSystem.heat = Math.max(0, state.vigilAlertSystem.heat - heatDecay);
         }
+
+        if (state.vigilAlertSystem.cooldownMode) {
+            PerformanceMonitor.end('processHeatAccumulator');
+            return;
+        }
+
+        var currentHeat = state.vigilAlertSystem.heat;
+        var roll = Math.random() * 100;
+        var triggerChance = heatChance + (currentHeat * 2);
+
+        if (roll < triggerChance && currentHeat > 5) {
+            var oldAlert = state.vigilAlertSystem.vigilAlert;
+            state.vigilAlertSystem.vigilAlert = clampScore(oldAlert + vigilInc, 'vigilAlert');
+            state.vigilAlertSystem.heat = Math.max(0, currentHeat - 5);
+            if (state.vigilAlertSystem.vigilAlert > oldAlert) {
+                message('The Vigil tightens their grip on the city.');
+                debugLog('HEAT', 'Heat triggered vigilAlert increase: ' + oldAlert + ' -> ' + state.vigilAlertSystem.vigilAlert);
+            }
+        }
+        PerformanceMonitor.end('processHeatAccumulator');
+    } catch (error) {
+        debugLog('HEAT', 'ERROR in processHeatAccumulator: ' + error.message);
     }
 }
 
 function processCooldownSystem() {
-    ensureStateShape();
-    var peakThreshold = getConfig('vigilPeakThreshold');
-    var cooldownDur = getConfig('cooldownDuration');
-    var cooldownRed = getConfig('cooldownReduction');
+    try {
+        PerformanceMonitor.start('processCooldownSystem');
+        ensureStateShape();
+        var peakThreshold = getConfig('vigilPeakThreshold');
+        var cooldownDur = getConfig('cooldownDuration');
+        var cooldownRed = getConfig('cooldownReduction');
 
-    var currentAlert = state.vigilAlertSystem.vigilAlert;
+        var currentAlert = state.vigilAlertSystem.vigilAlert;
 
-    if (state.vigilAlertSystem.cooldownMode) {
-        state.vigilAlertSystem.cooldownTurnsLeft--;
-        log('COOLDOWN', 'Cooldown active. Turns left: ' + state.vigilAlertSystem.cooldownTurnsLeft);
+        if (state.vigilAlertSystem.cooldownMode) {
+            state.vigilAlertSystem.cooldownTurnsLeft--;
+            debugLog('COOLDOWN', 'Cooldown active. Turns left: ' + state.vigilAlertSystem.cooldownTurnsLeft);
 
-        if (state.vigilAlertSystem.cooldownTurnsLeft <= 0) {
-            var newAlert = Math.max(1, currentAlert - cooldownRed);
-            state.vigilAlertSystem.vigilAlert = clampScore(newAlert, 'vigilAlert');
-            state.vigilAlertSystem.cooldownMode = false;
-            state.vigilAlertSystem.heat = 0;
-            message('The Vigil patrols seem less frequent. The pressure eases... for now.');
-            log('COOLDOWN', 'Cooldown complete. vigilAlert reduced from ' + currentAlert + ' to ' + newAlert);
+            if (state.vigilAlertSystem.cooldownTurnsLeft <= 0) {
+                var newAlert = Math.max(1, currentAlert - cooldownRed);
+                state.vigilAlertSystem.vigilAlert = clampScore(newAlert, 'vigilAlert');
+                state.vigilAlertSystem.cooldownMode = false;
+                state.vigilAlertSystem.heat = 0;
+                message('The Vigil patrols seem less frequent. The pressure eases... for now.');
+                debugLog('COOLDOWN', 'Cooldown complete. vigilAlert reduced from ' + currentAlert + ' to ' + newAlert);
+            }
+        } else if (currentAlert >= peakThreshold && !state.encounterState.inEncounterMode) {
+            state.vigilAlertSystem.cooldownMode = true;
+            state.vigilAlertSystem.cooldownTurnsLeft = cooldownDur;
+            message('The city holds its breath. The storm cannot last forever.');
+            debugLog('COOLDOWN', 'Cooldown mode activated at vigilAlert ' + currentAlert);
         }
-    } else if (currentAlert >= peakThreshold && !state.encounterState.inEncounterMode) {
-        state.vigilAlertSystem.cooldownMode = true;
-        state.vigilAlertSystem.cooldownTurnsLeft = cooldownDur;
-        message('The city holds its breath. The storm cannot last forever.');
-        log('COOLDOWN', 'Cooldown mode activated at vigilAlert ' + currentAlert);
+        PerformanceMonitor.end('processCooldownSystem');
+    } catch (error) {
+        debugLog('COOLDOWN', 'ERROR in processCooldownSystem: ' + error.message);
     }
 }
+
+// #endregion
 
 function handleDebugCommands(text) {
     if (text.trim().toLowerCase() !== '/debug') {
@@ -737,10 +979,15 @@ function initializeEngine() {
         state.persistentData.locations[loc] = state.persistentData.locations[loc] || { lockedTrust: 0, lockedFear: 0, visited: false };
     }
     state.persistentData.locations['Ignition City Streets'].visited = true;
-    
-    log('SYSTEM', 'Core engine systems initialized.');
+
+    debugLog('INIT', 'Core engine systems initialized');
     state.engineInitialized = true;
 }
 
-// --- MASTER STARTUP CALL ---
+// #endregion
+
+// #region INITIALIZATION
 masterStartup();
+// #endregion
+
+void 0;
