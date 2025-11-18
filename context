@@ -7,6 +7,7 @@ const modifier = (text) => {
     if (!state.engineInitialized) { return { text: "" }; }
 
     let anOverride = null;
+    let secretDatabaseInjection = null; // Track if we need to inject SECRET_DATABASE into context
 
     const playerAction = state.encounterState.playerAction;
     const presentedClue = state.encounterState.presentedClue;
@@ -34,6 +35,14 @@ Description: ${state.GAME_DATA.CLUE_DETAILS[presentedClue]}
 
 # CRITICAL: Describe the clue's appearance EXACTLY as written above.`;
         state.memory.frontMemory = systemPrompt;
+
+        secretDatabaseInjection = `<SECRET_DATABASE_INJECTION>
+CLUE_EXAMINATION: ${presentedClue}
+DESCRIPTION: ${state.GAME_DATA.CLUE_DETAILS[presentedClue]}
+
+DIRECTIVE: Describe the clue's physical appearance exactly as specified above.
+</SECRET_DATABASE_INJECTION>`;
+
         state.nuanceEngine.shockEventFlag = true;
     }
     else if (playerAction === 'show_clue' && presentedClue) {
@@ -51,6 +60,14 @@ Dialogue: "${revealGage.dialogue}"
 
 # CRITICAL: The above action and dialogue must appear EXACTLY as written in the next output.`;
         state.memory.frontMemory = systemPrompt;
+
+        secretDatabaseInjection = `<SECRET_DATABASE_INJECTION>
+ENCOUNTER: Vigil Patrol (Gage Riley)
+CHARACTER_ACTION: ${revealGage.action}
+CHARACTER_DIALOGUE: "${revealGage.dialogue}"
+
+DIRECTIVE: Gage Riley must perform the exact action and speak the exact dialogue specified above.
+</SECRET_DATABASE_INJECTION>`;
     }
     else if (playerAction === 'random_encounter_kaelen') {
         enterEncounter("Ignition City Streets (Kaelen Encounter)");
@@ -64,6 +81,14 @@ Dialogue: "${revealKaelen.dialogue}"
 
 # CRITICAL: The above action and dialogue must appear EXACTLY as written in the next output.`;
         state.memory.frontMemory = systemPrompt;
+
+        secretDatabaseInjection = `<SECRET_DATABASE_INJECTION>
+ENCOUNTER: Kaelen Encounter (Deputy Kaelen)
+CHARACTER_ACTION: ${revealKaelen.action}
+CHARACTER_DIALOGUE: "${revealKaelen.dialogue}"
+
+DIRECTIVE: Deputy Kaelen must perform the exact action and speak the exact dialogue specified above.
+</SECRET_DATABASE_INJECTION>`;
     }
 
     if (presentedClue) {
@@ -104,6 +129,17 @@ Dialogue: "${chosenTier.dialogue}"
 
 # CRITICAL: The above action and dialogue must appear EXACTLY as written in the next output.`;
                 state.memory.frontMemory = systemPrompt;
+
+                secretDatabaseInjection = `<SECRET_DATABASE_INJECTION>
+CLUE_PRESENTED: ${presentedClue}
+CHARACTER_RESPONDING: ${targetCharacter}
+TRUST_LEVEL: ${trust}
+FEAR_LEVEL: ${fear}
+CHARACTER_ACTION: ${chosenTier.action}
+CHARACTER_DIALOGUE: "${chosenTier.dialogue}"
+
+DIRECTIVE: ${targetCharacter} must perform the exact action and speak the exact dialogue specified above in response to being shown ${presentedClue}.
+</SECRET_DATABASE_INJECTION>`;
             }
         }
     }
@@ -111,7 +147,12 @@ Dialogue: "${chosenTier.dialogue}"
     if (anOverride) {
         updateCoreState(anOverride);
     }
-    
+
+    // Inject SECRET_DATABASE system block into context text if needed
+    if (secretDatabaseInjection) {
+        text = secretDatabaseInjection + "\n\n" + text;
+    }
+
     if (state.encounterState.actionTaken) {
         return { text: "" };
     }
