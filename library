@@ -1,6 +1,12 @@
 // =============================================================================
-// LIBRARY SCRIPT (DEFINITIVE BLUEPRINT v21.0 - DEBUG & OPTIMIZATION UPDATE)
+// LIBRARY SCRIPT (DEFINITIVE BLUEPRINT v22.0 - STORY CARD INTEGRATION UPDATE)
 // =============================================================================
+// CHANGELOG v22.0:
+// - Added readPlayersAuthorsNoteFromStoryCard() to read from worldInfo.worldEntries
+// - PlayersAuthorsNote story card now automatically read every turn
+// - Create a story card with key "PlayersAuthorsNote" and its value will be added to author's note
+// - Integrates with existing state.playerAuthorsNote system
+//
 // CHANGELOG v21.0:
 // - CRITICAL: Added void 0 terminator for consistent behavior
 // - CRITICAL: Fixed logging to use built-in log() instead of console.log wrapper
@@ -119,6 +125,34 @@ function extractUserAuthorsNote(fullNote) {
         return '';
     }
     return fullNote;
+}
+
+function readPlayersAuthorsNoteFromStoryCard() {
+    try {
+        if (!worldInfo || !worldInfo.worldEntries) {
+            debugLog('AUTHOR', 'worldInfo.worldEntries not available');
+            return '';
+        }
+
+        for (var i = 0; i < worldInfo.worldEntries.length; i++) {
+            var entry = worldInfo.worldEntries[i];
+            if (entry && entry.entry && entry.keys) {
+                // Check if "PlayersAuthorsNote" is in the keys array
+                for (var j = 0; j < entry.keys.length; j++) {
+                    if (entry.keys[j] === 'PlayersAuthorsNote') {
+                        debugLog('AUTHOR', 'Found PlayersAuthorsNote story card');
+                        return entry.entry || '';
+                    }
+                }
+            }
+        }
+
+        debugLog('AUTHOR', 'PlayersAuthorsNote story card not found');
+        return '';
+    } catch (error) {
+        debugLog('AUTHOR', 'Error reading PlayersAuthorsNote: ' + error.message);
+        return '';
+    }
 }
 
 function clampScore(value, key) {
@@ -437,6 +471,10 @@ function assembleAuthorsNote(inputOverride) {
     try {
         PerformanceMonitor.start('assembleAuthorsNote');
         ensureStateShape();
+
+        // Read PlayersAuthorsNote from story card every turn
+        state.playerAuthorsNote = readPlayersAuthorsNoteFromStoryCard();
+
         if (!state.originalAuthorsNote) {
             var currentUserNote = extractUserAuthorsNote(state.memory.authorsNote);
             state.originalAuthorsNote = '[Genre:{{genre}}] [Phase:{{phase}}] [Focus:{{focus}}] [Theme:{{theme}}] [Style:{{style}}] [Directive:{{directive}}] {{debug}}';
