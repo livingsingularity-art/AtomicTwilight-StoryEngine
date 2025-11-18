@@ -94,15 +94,10 @@ DIRECTIVE: Deputy Kaelen must perform the exact action and speak the exact dialo
     if (presentedClue) {
         const targetLocation = state.encounterState.inEncounterMode ? state.encounterState.activeLocation : 'Ignition City Streets';
         const targetCharacter = state.GAME_DATA.LOCATION_TO_CHARACTER_MAP[targetLocation];
-        const secrets = state.GAME_DATA.SECRET_DATABASE[targetLocation] || [];
-        let secret = null;
-        for (const s of secrets) {
-            if (s.clue === presentedClue) {
-                secret = s;
-                break;
-            }
-        }
-        
+
+        // PHASE 4 OPTIMIZATION: Use cached secret lookup
+        const secret = getCachedSecret(targetLocation, presentedClue);
+
         if (secret) {
             const trust = state.encounterState.inEncounterMode ? state.encounterState.activeTrust : (state.persistentData.characters[targetCharacter] ? state.persistentData.characters[targetCharacter].trust : 0);
             const fear = state.encounterState.inEncounterMode ? state.encounterState.activeFear : (state.persistentData.characters[targetCharacter] ? state.persistentData.characters[targetCharacter].fear : 0);

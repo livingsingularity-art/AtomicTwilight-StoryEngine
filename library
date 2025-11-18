@@ -284,6 +284,38 @@ var TurnAnalytics = (function() {
     };
 })();
 
+/**
+ * PHASE 4 OPTIMIZATION: SECRET_DATABASE cache for faster lookups
+ * @param {string} location - Location key
+ * @param {string} clue - Clue name
+ * @returns {Object|null} Secret object or null if not found
+ */
+function getCachedSecret(location, clue) {
+    state.secretDatabaseCache = state.secretDatabaseCache || {};
+    var cacheKey = location + '::' + clue;
+
+    if (state.secretDatabaseCache[cacheKey]) {
+        debugLog('SECRET', 'Cache hit for ' + cacheKey);
+        return state.secretDatabaseCache[cacheKey];
+    }
+
+    // Expensive lookup
+    var secrets = state.GAME_DATA.SECRET_DATABASE[location] || [];
+    var secret = null;
+    for (var i = 0; i < secrets.length; i++) {
+        if (secrets[i].clue === clue) {
+            secret = secrets[i];
+            break;
+        }
+    }
+
+    // Cache result (even if null)
+    state.secretDatabaseCache[cacheKey] = secret;
+    debugLog('SECRET', 'Cached ' + cacheKey + ': ' + (secret ? 'found' : 'not found'));
+
+    return secret;
+}
+
 // #endregion
 
 // #region ENCOUNTER SYSTEM
@@ -394,27 +426,40 @@ function processSocialGambit(playerInput) {
     }
 }
 
+// #region AUTHORS NOTE
+
 function assembleAuthorsNote(inputOverride) {
-    ensureStateShape();
-    if (!state.originalAuthorsNote) {
-        var currentUserNote = extractUserAuthorsNote(state.memory.authorsNote);
-        state.originalAuthorsNote = '[Genre:{{genre}}] [Phase:{{phase}}] [Focus:{{focus}}] [Theme:{{theme}}] [Style:{{style}}] [Directive:{{directive}}] {{debug}}';
-        if (currentUserNote) {
-            state.preservedUserNote = currentUserNote;
+    try {
+        PerformanceMonitor.start('assembleAuthorsNote');
+        ensureStateShape();
+        if (!state.originalAuthorsNote) {
+            var currentUserNote = extractUserAuthorsNote(state.memory.authorsNote);
+            state.originalAuthorsNote = '[Genre:{{genre}}] [Phase:{{phase}}] [Focus:{{focus}}] [Theme:{{theme}}] [Style:{{style}}] [Directive:{{directive}}] {{debug}}';
+            if (currentUserNote) {
+                state.preservedUserNote = currentUserNote;
+            }
         }
-    }
-    var override = inputOverride || null;
-    var charKey = state.GAME_DATA.LOCATION_TO_CHARACTER_MAP[state.encounterState.activeLocation] || 'Gorka';
-    var charData = state.persistentData.characters[charKey] || { trust: 0, fear: 0 };
-    var gs = {
-        alert: state.vigilAlertSystem.vigilAlert || 1,
-        rep: state.globalScores.reputation || -20,
-        susp: state.globalScores.suspicion || 0,
-        locKey: state.encounterState.activeLocation || 'Ignition City Streets',
-        isEncounter: !!state.encounterState.inEncounterMode,
-        trust: state.encounterState.inEncounterMode ? (state.encounterState.activeTrust || 0) : (charData.trust || 0),
-        fear: state.encounterState.inEncounterMode ? (state.encounterState.activeFear || 0) : (charData.fear || 0)
-    };
+        var override = inputOverride || null;
+        var charKey = state.GAME_DATA.LOCATION_TO_CHARACTER_MAP[state.encounterState.activeLocation] || 'Gorka';
+        var charData = state.persistentData.characters[charKey] || { trust: 0, fear: 0 };
+        var gs = {
+            alert: state.vigilAlertSystem.vigilAlert || 1,
+            rep: state.globalScores.reputation || -20,
+            susp: state.globalScores.suspicion || 0,
+            locKey: state.encounterState.activeLocation || 'Ignition City Streets',
+            isEncounter: !!state.encounterState.inEncounterMode,
+            trust: state.encounterState.inEncounterMode ? (state.encounterState.activeTrust || 0) : (charData.trust || 0),
+            fear: state.encounterState.inEncounterMode ? (state.encounterState.activeFear || 0) : (charData.fear || 0)
+        };
+
+        // PHASE 4 OPTIMIZATION: State hashing to skip unchanged authors note
+        var stateHash = '' + gs.alert + '|' + gs.rep + '|' + gs.susp + '|' + gs.trust + '|' + gs.fear + '|' + gs.locKey + '|' + gs.isEncounter;
+        if (!override && state.nuanceEngine.lastStateHash === stateHash && state.memory.authorsNote) {
+            debugLog('AUTHOR', 'Using cached authors note (state unchanged)');
+            PerformanceMonitor.end('assembleAuthorsNote');
+            return;
+        }
+        state.nuanceEngine.lastStateHash = stateHash;
     var locationData = state.GAME_DATA.LOCATION_MAP[gs.locKey] || { focus: 'Unknown-Location' };
     var recalcInterval = getConfig('genreRecalcInterval');
     var needsUpdate = !!state.nuanceEngine.shockEventFlag || ((state.nuanceEngine.turnCount || 0) - (state.nuanceEngine.lastGenreStyleUpdateTurn || 0) >= recalcInterval);
@@ -490,10 +535,18 @@ function assembleAuthorsNote(inputOverride) {
         .replace('{{style}}', finalStyle)
         .replace('{{directive}}', finalDirective)
         .replace('{{debug}}', debugVars);
-    var playerNoteSection = state.playerAuthorsNote ? ' ' + state.playerAuthorsNote : '';
-    var userNoteSection = state.preservedUserNote ? ' --- ' + state.preservedUserNote : '';
-    state.memory.authorsNote = (finalAN + playerNoteSection + userNoteSection).trim();
+        var playerNoteSection = state.playerAuthorsNote ? ' ' + state.playerAuthorsNote : '';
+        var userNoteSection = state.preservedUserNote ? ' --- ' + state.preservedUserNote : '';
+        state.memory.authorsNote = (finalAN + playerNoteSection + userNoteSection).trim();
+
+        debugLog('AUTHOR', 'Authors note assembled');
+        PerformanceMonitor.end('assembleAuthorsNote');
+    } catch (error) {
+        debugLog('AUTHOR', 'ERROR in assembleAuthorsNote: ' + error.message);
+    }
 }
+
+// #endregion
 
 function updateCoreState(inputOverride) {
     if (!state.engineInitialized) return;
